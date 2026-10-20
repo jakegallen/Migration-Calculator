@@ -1,0 +1,12 @@
+{
+  "name": "migrate-calc",
+  "version": "1.0.0",
+  "description": "migrate.fun LP recovery calculator — auto-lookup by CA",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

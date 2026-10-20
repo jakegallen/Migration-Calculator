@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LP Recovery Calculator · migrate.fun</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0B0B11;
+      --purple:      #7F5AF0;
+      --accent:      #7F5AF0;
+      --purple-lt:   #A78BFA;
+      --purple-card: rgba(42, 30, 55, 0.22);
+      --border-card: rgba(107, 33, 168, 0.20);
+      --border-ui:   rgba(255, 255, 255, 0.08);
+      --border-ui2:  rgba(255, 255, 255, 0.06);
+      --btn-bg:      rgba(255, 255, 255, 0.04);
+      --input-bg:    rgba(17, 18, 31, 0.70);
+      --text-1:      #F8F7F9;
+      --text-2:      #D8D5E2;
+      --text-3:      #A7A3B6;
+      --text-4:      #928EA6;
+      --green:       #4ade80;
+      --blue:        #60a5fa;
+      --yellow:      #fbbf24;
+      --red:         #f87171;
+      --mono:        'JetBrains Mono', ui-monospace, monospace;
+      --font:        'Inter', system-ui, sans-serif;
+    }
+
+    html, body { min-height: 100vh; background: var(--bg); color: var(--text-1); font-family: var(--font); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+    .bg-wormhole { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(147,51,234,0.12) 0%, transparent 55%),
+                  radial-gradient(ellipse at 30% 25%, rgba(168,85,247,0.09) 0%, transparent 45%),
+                  radial-gradient(ellipse at 72% 78%, rgba(196,181,253,0.07) 0%, transparent 45%),
+                  var(--bg);
+      animation: wormholeGlow 20s ease-in-out infinite; }
+    @keyframes wormholeGlow { 0%,100% { opacity:1; } 50% { opacity:0.75; } }
+
+    .page { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 16px 80px; }
+
+    /* Header */
+    .header { width: 100%; max-width: 680px; margin-bottom: 32px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .logo-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(127,90,240,0.12); border: 1px solid rgba(127,90,240,0.25); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple-lt); margin-bottom: 8px; }
+    .logo-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+    .header h1 { font-size: clamp(22px, 4vw, 32px); font-weight: 800; letter-spacing: -0.03em; color: var(--text-1); text-align: center; }
+    .header p { font-size: 13px; color: var(--text-3); text-align: center; }
+
+    /* Card */
+    .card { position: relative; width: 100%; max-width: 680px; background: var(--purple-card); border: 1px solid var(--border-card); border-radius: 28px; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: 0 20px 80px rgba(88,28,135,0.22); overflow: hidden; }
+    .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(to right, rgba(196,181,253,0) 0%, rgba(196,181,253,0.45) 50%, rgba(196,181,253,0) 100%); z-index: 1; }
+    .card::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at top, rgba(168,85,247,0.18), transparent 55%); pointer-events: none; z-index: 0; }
+    .card-inner { position: relative; z-index: 1; padding: 28px 32px; }
+    @media (max-width: 520px) { .card-inner { padding: 20px 18px; } }
+
+    /* Chain tabs */
+    .tab-wrap { display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 3px; background: rgba(0,0,0,0.20); border: 1px solid var(--border-ui); border-radius: 9px; padding: 3px; margin: 0 auto 20px; }
+    .chain-tab { display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 14px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--text-3); font-size: 11px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .chain-tab:hover { color: var(--text-1); }
+    .chain-tab.active { background: rgba(127,90,240,0.18); border-color: rgba(127,90,240,0.30); color: var(--text-1); }
+
+    /* Input row */
+    .search-row { position: relative; margin-bottom: 4px; }
+    .ca-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border-ui); border-radius: 12px; padding: 13px 122px 13px 16px; color: var(--text-1); font-size: 13px; font-family: var(--mono); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+    .ca-input::placeholder { color: var(--text-4); font-family: var(--font); font-size: 13px; }
+    .ca-input:focus { border-color: rgba(127,90,240,0.40); box-shadow: 0 0 0 1px rgba(127,90,240,0.12); }
+    .calc-btn { position: absolute; top: 50%; right: 5px; transform: translateY(-50%); height: calc(100% - 10px); padding: 0 18px; background: var(--purple); border: none; border-radius: 9px; color: #fff; font-size: 13px; font-weight: 700; font-family: var(--font); cursor: pointer; white-space: nowrap; transition: background 0.15s, box-shadow 0.15s, filter 0.15s; box-shadow: 0 0 16px rgba(127,90,240,0.28); }
+    .calc-btn:hover { background: var(--purple-lt); box-shadow: 0 0 24px rgba(127,90,240,0.42); filter: brightness(1.04); }
+    .calc-btn:active { filter: brightness(0.96); }
+    .calc-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+    .divider { height: 1px; background: var(--border-ui2); margin: 24px 0; }
+
+    /* States */
+    .state-loading, .state-error { display: none; }
+    .state-loading.show { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 0; }
+    .state-error.show { display: block; }
+    .spinner { width: 32px; height: 32px; border: 2.5px solid rgba(127,90,240,0.20); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.75s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .state-loading p { font-size: 13px; color: var(--text-3); }
+    .error-box { background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.22); border-radius: 12px; padding: 14px 18px; color: var(--red); font-size: 13px; }
+
+    /* Results */
+    #results { display: none; }
+    #results.show { display: block; }
+
+    .token-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .token-logo { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: rgba(255,255,255,0.06); }
+    .token-logo-fallback { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #7f5af0, #5b8def); flex-shrink: 0; }
+    .token-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .token-sym { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+    .token-name-txt { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+    .token-stats { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .token-price-txt { font-family: var(--mono); font-size: 12px; color: var(--text-3); }
+    .token-row .stat-pill { font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border-ui2); background: rgba(255,255,255,0.05); }
+    .token-row .stat-pill:empty { display: none; }
+    .token-row #rMc { color: var(--purple-lt); background: rgba(127,90,240,0.14); border-color: rgba(127,90,240,0.32); }
+    .token-row #rLiq { color: var(--green); background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.30); }
+    .badge { margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; background: rgba(127,90,240,0.14); border: 1px solid rgba(127,90,240,0.28); padding: 3px 9px; border-radius: 6px; color: var(--purple-lt); }
+    .liq-txt { font-size: 11px; color: var(--text-4); font-family: var(--mono); }
+    .sep { color: var(--text-4); margin: 0 4px; }
+
+    .stats-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-4); margin-bottom: 10px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 24px; }
+    @media (min-width: 480px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+    .stat-box { background: rgba(0,0,0,0.18); border: 1px solid var(--border-ui2); border-radius: 12px; padding: 12px 14px; }
+    .stat-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); margin-bottom: 5px; }
+    .stat-val { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--text-1); }
+    .stat-val.green { color: var(--green); }
+    .stat-sub { font-size: 10px; color: var(--text-4); margin-top: 2px; }
+
+    /* Scenario cards */
+    .scenario-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
+    @media (max-width: 440px) { .scenario-grid { grid-template-columns: 1fr; } }
+    .scenario-box { background: rgba(0,0,0,0.18); border: 1px solid var(--border-ui2); border-radius: 14px; padding: 16px 14px; transition: border-color 0.15s; }
+    .scenario-box:hover { border-color: rgba(127,90,240,0.30); }
+    .scenario-box.excellent { border-color: rgba(74,222,128,0.20); }
+    .scenario-box.good      { border-color: rgba(96,165,250,0.20); }
+    .scenario-box.fair      { border-color: rgba(251,191,36,0.20); }
+    .sc-header { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.10em; color: var(--text-4); margin-bottom: 10px; }
+    .sc-amount { font-family: var(--mono); font-size: 18px; font-weight: 800; color: var(--text-1); margin-bottom: 1px; }
+    .sc-fee { font-family: var(--mono); font-size: 10px; color: var(--text-4); margin-bottom: 6px; }
+    .sc-pct { font-size: 12px; color: var(--text-3); margin-bottom: 10px; }
+    .progress-track { height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+    .fill-Excellent { background: linear-gradient(90deg, #16a34a, #4ade80); }
+    .fill-Good      { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+    .fill-Fair      { background: linear-gradient(90deg, #b45309, #fbbf24); }
+    .fill-Low       { background: linear-gradient(90deg, #475569, #64748b); }
+
+    /* Custom slider */
+    .slider-card { background: rgba(0,0,0,0.18); border: 1px solid var(--border-ui2); border-radius: 14px; padding: 18px 20px; }
+    .slider-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .slider-head span:first-child { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.10em; color: var(--text-4); }
+    .slider-pct { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--purple-lt); }
+    input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07); outline: none; cursor: pointer; margin-bottom: 16px; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--purple); box-shadow: 0 0 0 3px rgba(127,90,240,0.28), 0 0 8px rgba(127,90,240,0.55); cursor: pointer; }
+    input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--purple); border: none; }
+    .slider-result { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .slider-sol { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--green); }
+    .slider-meta { font-size: 13px; color: var(--text-3); }
+    .slider-fee { font-family: var(--mono); font-size: 11px; color: var(--text-4); margin-top: 4px; }
+
+    /* Fee note */
+    .fee-note { display: flex; align-items: center; gap: 6px; margin-top: 16px; padding: 8px 12px; background: rgba(127,90,240,0.07); border: 1px solid rgba(127,90,240,0.18); border-radius: 8px; font-size: 11px; color: var(--text-4); }
+    .fee-note-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--purple); flex-shrink: 0; }
+
+    /* Platform selector */
+    .platform-section { margin-top: 8px; }
+    .platform-label { font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 12px; }
+    .platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+    .platform-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 10px; background: rgba(0,0,0,0.18); border: 1px solid var(--border-ui2); border-radius: 14px; cursor: pointer; transition: all 0.15s; color: var(--text-3); font-family: var(--font); }
+    .platform-btn:hover { border-color: rgba(127,90,240,0.35); color: var(--text-1); }
+    .platform-btn.active { border-color: rgba(127,90,240,0.50); background: rgba(127,90,240,0.10); color: var(--text-1); }
+    .platform-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .platform-name { font-size: 12px; font-weight: 600; }
+    .platform-coming { font-size: 10px; color: var(--text-4); }
+
+    /* pump.fun calculator */
+    #pumpCalc { display: none; }
+    #pumpCalc.show { display: block; }
+
+    .pump-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+    .pump-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.10em; color: var(--text-4); }
+    .sol-price-badge { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-3); font-family: var(--mono); background: rgba(0,0,0,0.20); border: 1px solid var(--border-ui2); border-radius: 6px; padding: 4px 10px; }
+    .sol-price-edit { background: none; border: none; color: var(--purple-lt); font-family: var(--mono); font-size: 11px; width: 60px; outline: none; text-align: right; padding: 0; cursor: text; }
+
+    .mc-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    .mc-table th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-4); text-align: left; padding: 0 10px 12px; }
+    .mc-table th:last-child, .mc-table td:last-child { text-align: right; }
+    .mc-table td { padding: 13px 10px; font-size: 12px; font-family: var(--mono); color: var(--text-3); border-top: 1px solid var(--border-ui2); vertical-align: middle; }
+    .mc-table tr:hover td { background: rgba(127,90,240,0.06); }
+    .mc-table td:nth-child(2) { color: var(--text-1); font-weight: 600; }   /* quote needed = primary read */
+    .mc-table .mc-label { color: var(--text-1); font-weight: 700; font-family: var(--font); font-size: 13px; letter-spacing: .01em; }
+    /* Leftover = two reads: the token amount (neutral/white so it's easy to scan) + the USD gain in green as the accent. Never a wall of green. */
+    .mc-table .leftover-pos, .mc-table .leftover-neg { font-weight: 700; }
+    .mc-table .lo-amt { font-weight: 800; letter-spacing: .01em; }
+    .mc-table .lo-amt.pos { color: var(--text-1); }
+    .mc-table .lo-amt.neg { color: var(--red); }
+    .mc-table .lo-usd { font-size: 11px; margin-top: 3px; font-weight: 700; font-family: var(--mono); }
+    .mc-table .lo-usd.pos { color: var(--green); }
+    .mc-table .lo-usd.neg { color: color-mix(in srgb, var(--red) 62%, var(--text-4)); }
+    .mc-table .grad-chip { display: inline-block; margin-left: 6px; font-size: 9px; font-weight: 800; letter-spacing: .06em; color: var(--green); background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.32); border-radius: 5px; padding: 1px 5px; vertical-align: 1px; }
+    .mc-table .insufficient { color: var(--text-4); font-style: italic; }
+    /* Inline token marks — ETH monochrome via currentColor (blends with cell text), SOL keeps brand gradient. */
+    .tok { display: inline-block; }
+    .tok-eth { height: 1em; width: .62em; vertical-align: -.14em; margin-left: 5px; opacity: .92; }
+    .tok-sol { height: .82em; width: 1.04em; vertical-align: -.08em; margin-left: 5px; }
+    .th-tok { margin-left: 4px; opacity: .85; }
+    .price-tok { margin: 0 5px 0 0; }
+    .price-tok.tok-eth { color: var(--text-2); }
+    .quote-tok { margin: 0; vertical-align: -.1em; }
+    .quote-tok.tok-eth { color: var(--purple-lt); }
+    /* Middle column: muted number + a slim supply bar so "how much of supply" reads at a glance without shouting. */
+    .mc-table td.pct-cell { color: var(--text-4); font-weight: 600; }
+    .mc-table .pct-wrap { display: flex; flex-direction: column; gap: 5px; }
+    .mc-table .pct-bar { height: 3px; border-radius: 2px; background: rgba(255,255,255,0.07); overflow: hidden; }
+    .mc-table .pct-bar > i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--purple-lt)); }
+    /* Graduation baseline row: the entry point above the post-graduation target rows. */
+    .mc-table tr.grad-row { background: rgba(74,222,128,0.06); }
+    .mc-table tr.grad-row td { border-bottom: 1px solid rgba(74,222,128,0.18); }
+    .mc-table tr.grad-row .mc-label { color: var(--green); font-weight: 700; }
+    .mc-table tr.grad-row .grad-cap { display: block; font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-4); margin-top: 1px; }
+    .mig-na { color: #e6b23a; font-weight: 700; font-size: 11px; letter-spacing: .01em; }
+
+    .mc-note { font-size: 10px; color: var(--text-4); line-height: 1.5; margin-top: 4px; }
+
+    /* AMM calculator (Raydium / Meteora) */
+    .amm-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .amm-card { background: rgba(0,0,0,0.18); border: 1px solid var(--border-ui2); border-radius: 12px; padding: 14px 16px; }
+    .amm-card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); margin-bottom: 6px; }
+    .amm-card-value { font-size: 15px; font-weight: 700; font-family: var(--mono); color: var(--text-1); }
+    .amm-card-sub { font-size: 11px; color: var(--text-4); margin-top: 2px; font-family: var(--mono); }
+    .amm-card.highlight { border-color: rgba(127,90,240,0.40); background: rgba(127,90,240,0.08); }
+    .amm-card.highlight .amm-card-value { color: var(--purple-lt); }
+    .amm-lp-note { font-size: 11px; color: var(--text-3); background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.18); border-radius: 8px; padding: 10px 14px; line-height: 1.5; margin-bottom: 10px; }
+    .amm-lp-note strong { color: var(--yellow); }
+    .amm-grid.has-treasury { grid-template-columns: 1fr 1fr; }
+    /* Customizable LP deposit control */
+    .lp-deposit-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: rgba(0,0,0,0.20); border: 1px solid var(--border-ui2); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
+    .lp-deposit-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); }
+    .lp-deposit-input { background: rgba(0,0,0,0.25); border: 1px solid var(--border-ui2); border-radius: 6px; color: var(--purple-lt); font-family: var(--mono); font-size: 13px; font-weight: 700; width: 96px; padding: 4px 8px; outline: none; text-align: right; }
+    .lp-deposit-input:focus { border-color: var(--accent); }
+    .lp-deposit-unit { font-size: 11px; font-weight: 700; color: var(--text-3); font-family: var(--mono); }
+    .lp-max-btn { background: rgba(127,90,240,0.15); border: 1px solid rgba(127,90,240,0.30); color: var(--purple-lt); font-size: 10px; font-weight: 700; border-radius: 5px; padding: 3px 9px; cursor: pointer; transition: background 0.15s; }
+    .lp-max-btn:hover { background: rgba(127,90,240,0.28); }
+    .lp-deposit-hint { font-size: 10px; color: var(--text-4); font-family: var(--mono); margin-left: auto; }
+    .amm-card.treasury { border-color: rgba(52,211,153,0.35); background: rgba(52,211,153,0.06); }
+    .amm-card.treasury .amm-card-value { color: var(--green); }
+    .treasury-banner { display: block; white-space: nowrap; overflow-x: auto; font-size: 13px; font-weight: 600; color: var(--green); background: rgba(52,211,153,0.10); border: 1px solid rgba(52,211,153,0.30); border-radius: 8px; padding: 11px 14px; margin-bottom: 10px; line-height: 1.45; }
+    .treasury-banner strong { color: var(--green); font-family: var(--mono); font-weight: 700; }
+    .treasury-banner .tb-usd { color: var(--text-1); }
+    .sol-cross-chain-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border-ui2); border-radius: 8px; color: var(--text-3); font-size: 11px; font-weight: 700; padding: 5px 14px; cursor: pointer; transition: all 0.15s; }
+    .sol-cross-chain-btn:hover { background: rgba(127,90,240,0.15); color: var(--text-1); }
+    .sol-cross-chain-btn.active { background: rgba(127,90,240,0.25); border-color: var(--accent); color: var(--accent); }
+    .platform-divider { grid-column: 1 / -1; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); padding: 6px 0 2px; border-top: 1px solid var(--border-ui2); margin-top: 4px; }
+
+    /* Coming soon */
+    .coming-soon { text-align: center; padding: 24px; color: var(--text-4); font-size: 13px; }
+
+    /* Pool address */
+    .pool-addr { margin-top: 18px; text-align: center; font-family: var(--mono); font-size: 10px; color: var(--text-4); word-break: break-all; line-height: 1.4; }
+    .pool-addr strong { color: var(--text-4); margin-right: 4px; font-weight: 600; }
+
+    /* Selectable LP pairs list */
+    .pool-item { position: relative; display: grid; grid-template-columns: 16px 1fr auto auto; gap: 6px 12px; align-items: center; background: rgba(0,0,0,0.18); border: 1px solid var(--border-ui2); border-radius: 10px; padding: 10px 14px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .pool-item:hover { border-color: rgba(127,90,240,0.45); background: rgba(127,90,240,0.06); }
+    .pool-item.selected { border-color: var(--accent); background: rgba(127,90,240,0.12); }
+    .pool-item .pool-radio { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border-ui2); box-sizing: border-box; }
+    .pool-item.selected .pool-radio { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 42%, transparent 46%); }
+    .pool-item .pool-dex { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-1); text-transform: capitalize; }
+    .pool-item .pool-dex-logo { width: 16px; height: 16px; border-radius: 4px; object-fit: contain; flex-shrink: 0; }
+    .pool-item .pool-quote { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--purple-lt); background: rgba(127,90,240,0.12); border-radius: 5px; padding: 2px 7px; }
+    .pool-item .pool-quote .coin-tok { width: 14px; height: 14px; display: block; flex-shrink: 0; }
+    .pool-item .pool-quote .coin-eth { color: var(--purple-lt); }
+    .pool-item .pool-quote .q-tk { line-height: 1; }
+    .pool-item .pool-liq { font-family: var(--mono); font-size: 12px; color: var(--green); }
+    .pool-item .pool-paddr { grid-column: 2 / -1; font-family: var(--mono); font-size: 10px; color: var(--text-4); word-break: break-all; }
+
+    /* Screen-reader-only (accessible labels) */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    /* First-run empty state */
+    .empty-state { text-align: center; padding: 26px 8px 4px; }
+    .empty-state p { font-size: 13px; color: var(--text-3); margin-bottom: 14px; }
+    .example-chips { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+    .chip-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .example-chip .chip-logo { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .example-chip { display: inline-flex; align-items: center; gap: 7px; background: rgba(127,90,240,0.10); border: 1px solid rgba(127,90,240,0.25); color: var(--purple-lt); font-size: 12px; font-weight: 600; border-radius: 20px; padding: 6px 14px; cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+    .example-chip:hover { color: var(--text-1); filter: brightness(1.18); }
+    .example-chip .ex-chain { font-size: 10px; color: var(--text-4); font-weight: 500; }
+    /* Per-chain colors — each chip is tinted to its chain's brand */
+    .example-chip.c-solana    { color: #B692FF; border-color: rgba(153,69,255,0.42); background: rgba(153,69,255,0.10); }
+    .example-chip.c-ethereum  { color: #9AA6F5; border-color: rgba(98,126,234,0.42); background: rgba(98,126,234,0.10); }
+    .example-chip.c-base      { color: #5B8DEF; border-color: rgba(0,82,255,0.45);   background: rgba(0,82,255,0.12); }
+    .example-chip.c-bsc       { color: #F0B90B; border-color: rgba(240,185,11,0.42); background: rgba(240,185,11,0.10); }
+    .example-chip.c-robinhood { color: #35D07F; border-color: rgba(0,200,5,0.42);    background: rgba(0,200,5,0.10); }
+
+    /* Headline result */
+    .headline { display: flex; flex-direction: column; gap: 4px; background: linear-gradient(135deg, rgba(74,222,128,0.10), rgba(127,90,240,0.08)); border: 1px solid rgba(74,222,128,0.22); border-radius: 16px; padding: 16px 18px; margin-bottom: 22px; }
+    .headline-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.10em; color: var(--text-4); }
+    .headline-pct { color: var(--purple-lt); }
+    .headline-main { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .headline-amt { font-family: var(--mono); font-size: 26px; font-weight: 800; color: var(--text-1); line-height: 1.1; }
+    .headline-usd { font-family: var(--mono); font-size: 14px; color: var(--green); font-weight: 700; }   /* green stays as the accent on the dollar value, not the whole line */
+    .headline-sub { font-size: 11px; color: var(--text-4); }
+    /* Quote-denomination toggle (SOL / ETH) on the recovery figures */
+    .denom-row { display: flex; align-items: center; gap: 10px; margin: -8px 0 16px; flex-wrap: wrap; }
+    .denom-tabs { display: inline-flex; gap: 3px; background: var(--input-bg); border: 1px solid var(--border-ui); border-radius: 9px; padding: 3px; }
+    .denom-tab { display: inline-flex; align-items: center; gap: 5px; background: transparent; border: none; color: var(--text-3); font-family: var(--font); font-size: 12px; font-weight: 600; border-radius: 6px; padding: 5px 12px; cursor: pointer; transition: all .15s; }
+    .denom-tab:hover { color: var(--text-1); }
+    .denom-tab.active { background: rgba(127,90,240,0.18); color: var(--text-1); }
+    .denom-tab .tok { width: 13px; height: 13px; }
+    .denom-hint { font-size: 11px; color: var(--text-4); line-height: 1.3; flex: 1; min-width: 160px; }
+
+    /* Info tooltip marker + visible popover */
+    .info-tip { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--text-4); color: var(--text-4); font-size: 9px; font-weight: 700; cursor: help; margin-left: 5px; vertical-align: middle; font-family: var(--font); font-style: normal; }
+    .info-tip:hover, .info-tip:focus { color: var(--text-1); border-color: var(--text-2); outline: none; }
+    .info-tip .tip-box { position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%); width: 220px; max-width: 72vw; background: #16161f; border: 1px solid var(--border-ui); border-radius: 9px; padding: 9px 11px; font-family: var(--font) !important; font-size: 11px !important; font-weight: 500 !important; color: var(--text-2) !important; line-height: 1.45 !important; text-transform: none !important; letter-spacing: normal !important; text-align: left; opacity: 0; visibility: hidden; transition: opacity 0.15s; z-index: 60; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: none; }
+    .info-tip .tip-box::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--border-ui); }
+    .info-tip:hover .tip-box, .info-tip:focus .tip-box, .info-tip:focus-within .tip-box { opacity: 1; visibility: visible; }
+
+    /* Keyboard focus ring for selectable pool rows */
+    .pool-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* ── Polish pass (theme-independent depth / motion / type) ── */
+    html, body { font-variant-numeric: tabular-nums; }
+    /* Hero headline */
+    .headline { box-shadow: 0 10px 34px rgba(74,222,128,0.07), inset 0 1px 0 rgba(255,255,255,0.05); }
+    .headline-amt { font-size: 30px; text-shadow: 0 0 18px rgba(255,255,255,0.10); }
+    /* Tactile hover-lift on interactive cards */
+    .scenario-box, .platform-btn, .pool-item, .example-chip { transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease; }
+    .scenario-box:hover, .platform-btn:hover, .pool-item:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
+    .example-chip:hover { transform: translateY(-1px); }
+    /* Elevation on active/selected states so the eye lands on them */
+    .pool-item.selected { box-shadow: 0 4px 14px rgba(127,90,240,0.16); }
+    .scenario-box.active { box-shadow: 0 0 0 1px var(--accent), 0 8px 20px rgba(127,90,240,0.18); }
+    /* Results reveal */
+    #results.show { animation: fadeInUp 0.32s cubic-bezier(0.4,0,0.2,1); }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      #results.show { animation: none; }
+      .scenario-box, .platform-btn, .pool-item, .example-chip { transition: none; }
+      .scenario-box:hover, .platform-btn:hover, .pool-item:hover, .example-chip:hover { transform: none; }
+    }
+
+    /* ── Mobile ── condense everything, keep it clean (never squished) ── */
+    @media (max-width: 560px) {
+      .page { padding: 22px 10px 56px; }
+      .card { border-radius: 20px; }
+      .card-inner { padding: 18px 14px; }
+      .header { margin-bottom: 20px; }
+      .header h1 { font-size: 21px; }
+      .header p { font-size: 12px; }
+
+      /* Chain tabs → a single swipeable row (no wrap, no visible scrollbar) */
+      .tab-wrap { display: flex; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+      .tab-wrap::-webkit-scrollbar { display: none; }
+      .chain-tab { flex: 0 0 auto; }
+
+      /* Token header: full name truncates; FDV/liq/dex drop to their own line, left-aligned */
+      .token-row { gap: 8px; }
+      .token-name-txt { max-width: 190px; }
+      .token-stats { width: 100%; margin-left: 0; }
+
+      /* Bigger tap targets: 2 platform buttons per row */
+      .platform-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .platform-btn { padding: 12px 8px; }
+      .platform-icon { width: 30px; height: 30px; }
+
+      /* Launch-cost table: tighten + hide the least-critical column (Pool Tokens) */
+      .mc-table th, .mc-table td { padding: 7px 5px; font-size: 11px; }
+      .mc-table th:nth-child(3), .mc-table td:nth-child(3) { display: none; }
+
+      /* Relaunch/treasury cards stay 2-up (short values); banner wraps instead of scrolling */
+      .treasury-banner { white-space: normal; overflow-x: visible; font-size: 12px; }
+      .lp-deposit-hint { margin-left: 0; width: 100%; }
+
+      /* Slider headline a touch smaller */
+      .slider-sol { font-size: 19px; }
+      .slider-card { padding: 16px 16px; }
+    }
+
+    /* Very small phones: single-column cards so nothing is cramped */
+    @media (max-width: 390px) {
+      .amm-grid, .amm-grid.has-treasury { grid-template-columns: 1fr; }
+      .mc-table th, .mc-table td { font-size: 10px; padding: 6px 4px; }
+      .header h1 { font-size: 19px; }
+    }
+    /* #8 — scenario cards double as slider presets */
+    .scenario-box { cursor: pointer; }
+    .scenario-box.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .scenario-box:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* #5 — collapsible (progressive disclosure) */
+    .collapsible { border: 1px solid var(--border-ui2); border-radius: 12px; background: rgba(0,0,0,0.10); overflow: hidden; }
+    .collapsible > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .collapsible > summary::-webkit-details-marker { display: none; }
+    .collapsible > summary::after { content: '▾'; color: var(--text-4); font-size: 12px; transition: transform 0.2s; }
+    .collapsible[open] > summary::after { transform: rotate(180deg); }
+    .collapsible > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 12px; }
+    .collapsible > summary .stats-label { margin-bottom: 0; }
+    .collapsible #poolsList { padding: 0 14px 12px; }
+
+    /* #11 — respect reduced-motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      .bg-wormhole { animation: none; }
+      .progress-fill { transition: none; }
+      .collapsible > summary::after { transition: none; }
+    }
+    /* Calculator disclaimer */
+    .calc-disclaimer { width: 100%; max-width: 680px; margin: 18px auto 0; text-align: center; font-size: 11.5px; line-height: 1.5; color: var(--text-4); }
+
+    /* Live / Manual mode toggle */
+    .mode-tabs { display: flex; justify-content: center; gap: 4px; margin-bottom: 14px; }
+    .mode-tab { background: transparent; border: 1px solid var(--border-ui); color: var(--text-3); font-family: var(--font); font-size: 12px; font-weight: 600; border-radius: 8px; padding: 6px 16px; cursor: pointer; transition: all .15s; }
+    .mode-tab:hover { color: var(--text-1); }
+    .mode-tab.active { background: rgba(127,90,240,0.18); border-color: rgba(127,90,240,0.35); color: var(--text-1); }
+
+    /* Manual input panel */
+    .manual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .mfield.full { grid-column: 1 / -1; }
+    .mfield label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); margin-bottom: 6px; }
+    .mfield .opt { color: var(--text-4); text-transform: none; font-weight: 500; letter-spacing: 0; }
+    .min { width: 100%; background: var(--input-bg); border: 1px solid var(--border-ui); border-radius: 10px; padding: 10px 13px; color: var(--text-1); font-size: 13px; font-family: var(--mono); outline: none; transition: border-color .15s; }
+    .min:focus { border-color: rgba(127,90,240,0.45); }
+    .min::placeholder { color: var(--text-4); font-family: var(--font); }
+    .min-row { display: flex; gap: 8px; }
+    .min.sel { width: auto; flex-shrink: 0; cursor: pointer; font-family: var(--font); font-weight: 600; }
+    .calc-btn-full { width: 100%; height: 44px; background: var(--purple); border: none; border-radius: 12px; color: #fff; font-size: 14px; font-weight: 700; font-family: var(--font); cursor: pointer; box-shadow: 0 0 20px rgba(127,90,240,0.28); transition: all .15s; }
+    .calc-btn-full:hover { background: var(--purple-lt); transform: translateY(-1px); box-shadow: 0 0 28px rgba(127,90,240,0.42); }
+    .manual-err { color: var(--red); font-size: 12px; margin-bottom: 10px; min-height: 16px; }
+    .manual-note { font-size: 11px; color: var(--text-4); margin-top: 10px; text-align: center; }
+    @media (max-width: 560px) { .manual-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<!-- Reusable token logos (define once, reference via <use>). ETH inherits currentColor (monochrome, blends with text); SOL keeps its brand gradient. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="solGrad" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#14F195"/>
+      <stop offset="1" stop-color="#9945FF"/>
+    </linearGradient>
+    <symbol id="ethLogo" viewBox="0 0 256 417">
+      <path fill="currentColor" opacity=".55" d="M127.96 0l-2.79 9.49v275.7l2.79 2.78 127.96-75.64z"/>
+      <path fill="currentColor" d="M127.96 0L0 212.32l127.96 75.64V154.16z"/>
+      <path fill="currentColor" opacity=".55" d="M127.96 312.19l-1.57 1.91v98.2l1.57 4.59L256 236.59z"/>
+      <path fill="currentColor" d="M127.96 416.9v-104.71L0 236.59z"/>
+      <path fill="currentColor" opacity=".35" d="M127.96 287.96l127.96-75.64-127.96-58.16z"/>
+      <path fill="currentColor" opacity=".7" d="M0 212.32l127.96 75.64V154.16z"/>
+    </symbol>
+    <symbol id="solLogo" viewBox="0 0 397.7 311.7">
+      <path fill="url(#solGrad)" d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1z"/>
+      <path fill="url(#solGrad)" d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1z"/>
+      <path fill="url(#solGrad)" d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1z"/>
+    </symbol>
+    <!-- Quote-token coin marks (LP pair badges): real logos where trivial, brand coins otherwise; always paired with the ticker text. -->
+    <symbol id="usdcLogo" viewBox="0 0 2000 2000">
+      <circle cx="1000" cy="1000" r="1000" fill="#2775CA"/>
+      <path fill="#fff" d="M1275 1158c0-146-88-196-263-217-125-17-150-50-150-108s42-96 125-96c75 0 117 25 137 88 4 12 16 20 29 20h67c17 0 30-13 30-30v-4c-16-90-90-160-183-168v-96c0-17-13-30-33-33h-63c-17 0-30 13-33 33v92c-125 17-204 100-204 208 0 138 83 191 258 212 117 17 154 42 154 108s-58 112-137 112c-108 0-146-46-158-108-4-16-17-25-30-25h-71c-17 0-30 13-30 30v4c16 100 79 172 217 192v96c0 17 13 30 33 33h63c17 0 30-13 33-33v-96c125-21 208-108 208-229z"/>
+      <path fill="#fff" d="M796 1596c-325-117-492-479-371-800 63-171 196-304 371-367 17-8 25-21 25-42v-58c0-17-8-29-25-33-4 0-12 0-16 4-396 125-613 546-488 942 75 233 254 412 488 487 17 8 33 0 37-17 4-4 4-8 4-16v-58c0-13-12-29-25-42zM1237 375c-17-8-33 0-37 17-4 4-4 8-4 17v58c0 17 12 33 25 42 325 117 492 479 371 800-63 171-196 304-371 367-17 8-25 21-25 42v58c0 17 8 29 25 33 4 0 12 0 16-4 396-125 613-546 488-942-75-237-258-416-488-488z"/>
+    </symbol>
+    <symbol id="usdtLogo" viewBox="0 0 2000 2000">
+      <circle cx="1000" cy="1000" r="1000" fill="#26A17B"/>
+      <path fill="#fff" d="M1123 866v-138h316V518H562v210h316v138c-257 12-450 63-450 124s193 112 450 124v442h245v-442c257-12 450-63 450-124s-193-112-450-124zm0 210v-1c-6 0-38 2-108 2-56 0-96-2-110-2v1c-218-10-380-48-380-93s162-83 380-93v148c14 1 55 3 111 3 67 0 101-2 107-3v-148c217 10 379 48 379 93s-162 83-379 93z"/>
+    </symbol>
+    <symbol id="pyusdLogo" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="50" fill="#0070BA"/>
+      <text x="50" y="70" font-size="58" font-family="Arial, sans-serif" font-weight="800" fill="#fff" text-anchor="middle">$</text>
+    </symbol>
+    <symbol id="daiLogo" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="50" fill="#F5AC37"/>
+      <text x="50" y="68" font-size="46" font-family="Arial, sans-serif" font-weight="800" fill="#fff" text-anchor="middle">◈</text>
+    </symbol>
+    <symbol id="coinGeneric" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="50" fill="#5b6172"/>
+      <circle cx="50" cy="50" r="34" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="6"/>
+    </symbol>
+  </defs>
+</svg>
+<div class="bg-wormhole"></div>
+<div class="page">
+
+  <div class="header">
+    <h1>LP Recovery Calculator</h1>
+  </div>
+
+  <div class="card">
+    <div class="card-inner">
+
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="live" onclick="setMode('live')">Live lookup</button>
+        <button class="mode-tab" data-mode="manual" onclick="setMode('manual')">Manual</button>
+      </div>
+
+      <div class="tab-wrap" id="tabWrap">
+        <button class="chain-tab active" data-chain="solana" onclick="setChain('solana')">
+          <img src="https://assets.coingecko.com/coins/images/4128/small/solana.png" style="width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:4px;" onerror="this.remove()"> Solana
+        </button>
+        <button class="chain-tab" data-chain="ethereum" onclick="setChain('ethereum')">
+          <img src="https://assets.coingecko.com/coins/images/279/small/ethereum.png" style="width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:4px;" onerror="this.remove()"> Ethereum
+        </button>
+        <button class="chain-tab" data-chain="base" onclick="setChain('base')">
+          <img src="https://assets.coingecko.com/asset_platforms/images/131/small/base.jpeg" style="width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:4px;" onerror="this.remove()"> Base
+        </button>
+        <button class="chain-tab" data-chain="bsc" onclick="setChain('bsc')">
+          <img src="https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png" style="width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:4px;" onerror="this.remove()"> BSC
+        </button>
+        <button class="chain-tab" data-chain="robinhood" onclick="setChain('robinhood')">
+          <img src="https://dd.dexscreener.com/ds-data/chains/robinhood.png" style="width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:4px;" onerror="this.remove()"> Robinhood
+        </button>
+      </div>
+
+      <div class="search-row" id="searchRow">
+        <label class="sr-only" for="caInput">Token contract or LP pair address</label>
+        <input id="caInput" class="ca-input" type="text" placeholder="Token contract address or LP pair address" autocomplete="off" spellcheck="false" aria-label="Token contract or LP pair address" />
+        <button class="calc-btn" id="calcBtn" onclick="doLookup()">Calculate</button>
+      </div>
+
+      <!-- Manual mode — type your own pool numbers to test different values -->
+      <div id="manualPanel" style="display:none;">
+        <div class="manual-grid">
+          <div class="mfield full"><label>Token ticker <span class="opt">(optional)</span></label><input id="mTicker" class="min" placeholder="e.g. DOG" maxlength="12" /></div>
+          <div class="mfield"><label>Tokens in Pool</label><input id="mTokens" class="min" type="text" inputmode="decimal" placeholder="e.g. 22m" /></div>
+          <div class="mfield"><label>Liquidity in Pool</label>
+            <div class="min-row">
+              <input id="mNative" class="min" type="text" inputmode="decimal" placeholder="e.g. 800" />
+              <select id="mSymbol" class="min sel"><option>SOL</option><option>ETH</option><option>BNB</option></select>
+            </div>
+          </div>
+          <div class="mfield"><label>Total Token Supply</label><input id="mSupply" class="min" type="text" inputmode="decimal" placeholder="e.g. 1b" /></div>
+          <div class="mfield"><label>Native Price USD <span class="opt">(optional)</span></label><input id="mPrice" class="min" type="text" inputmode="decimal" placeholder="auto" /></div>
+        </div>
+        <div class="manual-err" id="manualErr"></div>
+        <button class="calc-btn-full" onclick="runManual()">Calculate Recovery</button>
+        <div class="manual-note">Accepts shorthand: type <b>22m</b>, <b>1b</b>, or a full number. Everything downstream (scenarios, slider, relaunch) recalculates from your inputs.</div>
+      </div>
+
+
+      <div class="empty-state" id="emptyState">
+        <div class="example-chips">
+          <div class="chip-row">
+            <button class="example-chip c-solana" type="button" onclick="useExample('solana','9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump')"><img class="chip-logo" src="https://dd.dexscreener.com/ds-data/tokens/solana/9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump.png" alt="" onerror="this.remove()">Fartcoin <span class="ex-chain">Solana</span></button>
+            <button class="example-chip c-ethereum" type="button" onclick="useExample('ethereum','0x6982508145454ce325ddbe47a25d4ec3d2311933')"><img class="chip-logo" src="https://dd.dexscreener.com/ds-data/tokens/ethereum/0x6982508145454ce325ddbe47a25d4ec3d2311933.png" alt="" onerror="this.remove()">PEPE <span class="ex-chain">Ethereum</span></button>
+            <button class="example-chip c-base" type="button" onclick="useExample('base','0x532f27101965dd16442E59d40670FaF5eBB142E4')"><img class="chip-logo" src="https://dd.dexscreener.com/ds-data/tokens/base/0x532f27101965dd16442E59d40670FaF5eBB142E4.png" alt="" onerror="this.remove()">BRETT <span class="ex-chain">Base</span></button>
+          </div>
+          <div class="chip-row">
+            <button class="example-chip c-bsc" type="button" onclick="useExample('bsc','0xc748673057861a797275CD8A068AbB95A902e8de')"><img class="chip-logo" src="https://dd.dexscreener.com/ds-data/tokens/bsc/0xc748673057861a797275CD8A068AbB95A902e8de.png" alt="" onerror="this.remove()">BabyDoge <span class="ex-chain">BSC</span></button>
+            <button class="example-chip c-robinhood" type="button" onclick="useExample('robinhood','0x020bfC650A365f8BB26819deAAbF3E21291018b4')"><img class="chip-logo" src="https://dd.dexscreener.com/ds-data/tokens/robinhood/0x020bfC650A365f8BB26819deAAbF3E21291018b4.png" alt="" onerror="this.remove()">CASHCAT <span class="ex-chain">Robinhood</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="state-loading" id="stateLoading"><div class="spinner"></div><p>Fetching pool data…</p></div>
+      <div class="state-error" id="stateError"><div class="divider"></div><div class="error-box" id="errorMsg"></div></div>
+
+      <div id="results">
+        <div class="divider"></div>
+
+        <!-- Token info -->
+        <div class="token-row">
+          <img class="token-logo" id="rLogo" alt="" style="display:none;" />
+          <div class="token-id">
+            <span class="token-sym" id="rSymbol">—</span>
+            <span class="token-name-txt" id="rName">—</span>
+          </div>
+          <div class="token-stats">
+            <span class="stat-pill" id="rMc" title="Fully Diluted Valuation: token price × total supply"></span>
+            <span class="stat-pill" id="rLiq" title="Total USD liquidity in the selected pool"></span>
+            <span class="badge" id="rDex">—</span>
+          </div>
+        </div>
+
+        <!-- Headline: the single takeaway -->
+        <div class="headline">
+          <div class="headline-label">Recoverable liquidity <span class="headline-pct" id="headlinePct">at 50%</span> participation</div>
+          <div class="headline-main">
+            <span class="headline-amt" id="headlineAmt">—</span>
+            <span class="headline-usd" id="headlineUsd"></span>
+          </div>
+        </div>
+
+        <!-- Display-currency toggle: convert every native amount on the page to SOL or ETH via USD -->
+        <div class="denom-row" id="denomRow" style="display:none;">
+          <div class="denom-tabs" role="group" aria-label="Display currency">
+            <button type="button" class="denom-tab active" id="denomTabSol" onclick="setDenom('SOL', true)"><svg class="tok tok-sol" aria-label="SOL"><use href="#solLogo"/></svg>SOL</button>
+            <button type="button" class="denom-tab" id="denomTabEth" onclick="setDenom('ETH', true)"><svg class="tok tok-eth" aria-label="ETH"><use href="#ethLogo"/></svg>ETH</button>
+          </div>
+          <span class="denom-hint" id="denomHint"></span>
+        </div>
+
+        <!-- Pool stats -->
+        <div class="stats-label">Pool Status</div>
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-lbl" id="rTokensLabel">Tokens in Pool</div><div class="stat-val" id="rTokensInPool">—</div></div>
+          <div class="stat-box"><div class="stat-lbl" id="rNativeLabel">SOL in Pool</div><div class="stat-val" id="rNativeInPool">—</div></div>
+          <div class="stat-box"><div class="stat-lbl">Total Supply</div><div class="stat-val" id="rTotalSupply">—</div></div>
+          <div class="stat-box"><div class="stat-lbl">Available</div><div class="stat-val green" id="rAvailable">—</div><div class="stat-sub" id="rAvailablePct"></div></div>
+        </div>
+
+        <!-- LP pairs (collapsible — deepest pool is auto-selected) -->
+        <details id="poolsBreakdown" class="collapsible" style="display:none;margin-bottom:24px;">
+          <summary><span class="stats-label" id="poolsBreakdownLabel">LP Pairs</span></summary>
+          <div id="poolsList" role="radiogroup" aria-label="Select an LP pool"></div>
+        </details>
+
+        <!-- Scenarios -->
+        <div class="stats-label">Recovery Scenarios<span class="info-tip" tabindex="0">i<span class="tip-box">Native liquidity the team recovers if 25% / 50% / 75% of token holders migrate their tokens. Shown net of the platform fee. Tap a card to set the slider.</span></span></div>
+        <div class="scenario-grid" id="scenarioCards"></div>
+
+        <!-- Custom slider -->
+        <div class="slider-card">
+          <div class="slider-head">
+            <span>Custom Participation Rate<span class="info-tip" tabindex="0">i<span class="tip-box">The amount of native liquidity recovered, based on how many token holders migrate their tokens. Higher migration participation recovers more native liquidity.</span></span></span>
+            <span class="slider-pct" id="sliderDisplay">50%</span>
+          </div>
+          <input type="range" id="customSlider" min="1" max="95" value="50" oninput="onSlider(this.value)" />
+          <div class="slider-result">
+            <span class="slider-sol" id="customSol">—</span>
+            <span class="slider-meta" id="customMeta">—</span>
+          </div>
+        </div>
+
+        <div class="fee-note"><div class="fee-note-dot"></div>Platform fee included in quotes</div>
+
+        <!-- Platform selector -->
+        <div class="divider"></div>
+        <div class="platform-section">
+          <div class="platform-label">Where are you migrating to?</div>
+          <div class="platform-grid">
+            <!-- Solana native platforms -->
+            <div id="solanaPlatforms" style="display:contents;">
+              <button class="platform-btn active" onclick="selectPlatform('pumpfun')">
+                <div class="platform-icon" style="background:rgba(0,255,127,0.1);">
+                  <img src="https://pump.fun/logo.png" alt="pumpswap" style="width:36px;height:36px;border-radius:8px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=36 height=36 viewBox=\'0 0 36 36\'><circle cx=18 cy=18 r=18 fill=\'#00d68f\'/><text x=18 y=24 text-anchor=\'middle\' font-size=\'16\' font-weight=\'bold\' font-family=\'sans-serif\' fill=\'#fff\'>P</text></svg>'">
+                </div>
+                <span class="platform-name">pumpswap</span>
+              </button>
+              <button class="platform-btn" onclick="selectPlatform('meteora')">
+                <div class="platform-icon" style="background:rgba(96,165,250,0.1);">
+                  <img src="https://app.meteora.ag/icons/logo.svg" alt="Meteora" style="width:36px;height:36px;border-radius:8px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=36 height=36 viewBox=\'0 0 36 36\'><circle cx=18 cy=18 r=18 fill=\'#1e90ff\'/><text x=18 y=24 text-anchor=\'middle\' font-size=\'16\' font-weight=\'bold\' font-family=\'sans-serif\' fill=\'#fff\'>M</text></svg>'">
+                </div>
+                <span class="platform-name">Meteora</span>
+              </button>
+              <button class="platform-btn" onclick="selectPlatform('raydium')">
+                <div class="platform-icon" style="background:rgba(13,13,43,0.6);">
+                  <img src="raydium.png" alt="Raydium" style="width:36px;height:36px;border-radius:8px;object-fit:contain;">
+                </div>
+                <span class="platform-name">Raydium</span>
+              </button>
+              <!-- Solana → EVM cross-chain -->
+              <button id="solUniswapBtn" class="platform-btn" onclick="selectPlatform('sol-uniswap')">
+                <div class="platform-icon" style="background:rgba(252,72,255,0.08);">
+                  <img src="https://app.uniswap.org/favicon.png" alt="Uniswap" style="width:36px;height:36px;border-radius:8px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=36 height=36 viewBox=\'0 0 36 36\'><circle cx=18 cy=18 r=18 fill=\'#1a0030\'/><text x=18 y=24 text-anchor=\'middle\' font-size=\'18\' font-family=\'Arial,sans-serif\'>🦄</text></svg>'">
+                </div>
+                <span class="platform-name">Uniswap</span>
+              </button>
+              <!-- Solana → Pons v2 (Robinhood) cross-chain -->
+              <button class="platform-btn" onclick="selectPlatform('ponsv2')">
+                <div class="platform-icon" style="background:rgba(0,200,83,0.1);">
+                  <img src="pons-logo.png" alt="Pons" style="width:36px;height:36px;border-radius:8px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=36 height=36 viewBox=\'0 0 36 36\'><circle cx=18 cy=18 r=18 fill=\'#00c853\'/><text x=18 y=24 text-anchor=\'middle\' font-size=\'15\' font-weight=\'bold\' font-family=\'sans-serif\' fill=\'#fff\'>Pv2</text></svg>'">
+                </div>
+                <span class="platform-name">Pons</span>
+                              </button>
+            </div>
+            <!-- EVM same-chain platforms -->
+            <button id="uniswapBtn" class="platform-btn" onclick="selectEvmPlatform(this,'Uniswap Pool')" style="display:none;">
+              <div class="platform-icon" style="background:rgba(252,72,255,0.08);">
+                <img src="https://app.uniswap.org/favicon.png" alt="Uniswap" style="width:36px;height:36px;border-radius:8px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=36 height=36 viewBox=\'0 0 36 36\'><circle cx=18 cy=18 r=18 fill=\'#1a0030\'/><text x=18 y=24 text-anchor=\'middle\' font-size=\'18\' font-family=\'Arial,sans-serif\'>🦄</text></svg>'">
+              </div>
+              <span class="platform-name">Uniswap</span>
+            </button>
+            <button id="pancakeBtn" class="platform-btn" onclick="selectEvmPlatform(this,'PancakeSwap Pool')" style="display:none;">
+              <div class="platform-icon" style="background:rgba(255,211,0,0.08);">
+                <img src="https://pancakeswap.finance/favicon.ico" alt="PancakeSwap" style="width:36px;height:36px;border-radius:8px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=36 height=36 viewBox=\'0 0 36 36\'><circle cx=18 cy=18 r=18 fill=\'#1a1400\'/><text x=18 y=25 text-anchor=\'middle\' font-size=\'20\' font-family=\'Arial,sans-serif\'>🥞</text></svg>'">
+              </div>
+              <span class="platform-name">PancakeSwap</span>
+            </button>
+            <!-- EVM → Solana cross-chain buttons (inline in same grid) -->
+            <button id="evmPumpBtn" class="platform-btn" onclick="selectEvmCross(this,'pumpfun')" style="display:none;">
+              <div class="platform-icon" style="background:rgba(0,255,127,0.1);">
+                <img src="https://pump.fun/logo.png" alt="pumpswap" style="width:36px;height:36px;border-radius:8px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=36 height=36 viewBox=\'0 0 36 36\'><circle cx=18 cy=18 r=18 fill=\'#00d68f\'/><text x=18 y=24 text-anchor=\'middle\' font-size=\'16\' font-weight=\'bold\' font-family=\'sans-serif\' fill=\'#fff\'>P</text></svg>'">
+              </div>
+              <span class="platform-name">pumpswap</span>
+            </button>
+            <button id="evmMeteoraBtn" class="platform-btn" onclick="selectEvmCross(this,'meteora')" style="display:none;">
+              <div class="platform-icon" style="background:rgba(96,165,250,0.1);">
+                <img src="https://app.meteora.ag/icons/logo.svg" alt="Meteora" style="width:36px;height:36px;border-radius:8px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=36 height=36 viewBox=\'0 0 36 36\'><circle cx=18 cy=18 r=18 fill=\'#1e90ff\'/><text x=18 y=24 text-anchor=\'middle\' font-size=\'16\' font-weight=\'bold\' font-family=\'sans-serif\' fill=\'#fff\'>M</text></svg>'">
+              </div>
+              <span class="platform-name">Meteora</span>
+            </button>
+            <button id="evmRaydiumBtn" class="platform-btn" onclick="selectEvmCross(this,'raydium')" style="display:none;">
+              <div class="platform-icon" style="background:rgba(13,13,43,0.6);">
+                <img src="raydium.png" alt="Raydium" style="width:36px;height:36px;border-radius:8px;object-fit:contain;">
+              </div>
+              <span class="platform-name">Raydium</span>
+            </button>
+            <button id="evmPonsBtn" class="platform-btn" onclick="selectEvmCross(this,'ponsv2')" style="display:none;">
+              <div class="platform-icon" style="background:rgba(0,200,83,0.1);">
+                <img src="pons-logo.png" alt="Pons" style="width:36px;height:36px;border-radius:8px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=36 height=36 viewBox=\'0 0 36 36\'><circle cx=18 cy=18 r=18 fill=\'#00c853\'/><text x=18 y=24 text-anchor=\'middle\' font-size=\'15\' font-weight=\'bold\' font-family=\'sans-serif\' fill=\'#fff\'>Pv2</text></svg>'">
+              </div>
+              <span class="platform-name">Pons</span>
+                          </button>
+          </div>
+
+          <!-- Hidden inputs for EVM→Solana cross-chain conversion (used by JS only) -->
+          <div id="evmCrossBar" style="display:none;">
+            <span id="evmCrossNativeSym"></span>
+            <input type="number" id="evmCrossNativePrice" value="3000" style="display:none;" />
+            <input type="number" id="evmCrossSolPrice" value="150" style="display:none;" />
+          </div>
+
+          <!-- pump.fun calculator -->
+          <div id="pumpCalc" class="show">
+            <div class="pump-header">
+              <span class="pump-title">pumpswap Launch Cost<span class="info-tip" tabindex="0">i<span class="tip-box"><b>Target MC</b>: the market cap you want to relaunch at.<br><b>SOL Needed</b>: the SOL to reach that market cap, including the ~85 SOL that seeds the pool.<br><b>% Supply Purchased</b>: share of the 1B supply bought to get there.<br><b>Leftover SOL</b>: your recovered SOL minus what is needed, which is what you keep.</span></span></span>
+              <div class="sol-price-badge">
+                <svg class="tok tok-sol price-tok" aria-label="SOL"><use href="#solLogo"/></svg>$<input type="number" id="solPriceInput" class="sol-price-edit" value="150" min="1" max="99999" step="1" oninput="renderPumpTable()" />
+              </div>
+            </div>
+            <table class="mc-table">
+              <thead>
+                <tr>
+                  <th>Target MC</th>
+                  <th title="Total to seed the new pool at that market cap, in the selected display currency, including the ~85 SOL bonding-curve liquidity."><span class="disp-unit"><svg class="tok tok-sol th-tok" aria-label="SOL"><use href="#solLogo"/></svg></span> Needed</th>
+                  <th title="Share of the 1B supply purchased to reach that market cap.">% Supply Purchased</th>
+                  <th>Leftover <span class="disp-unit"><svg class="tok tok-sol th-tok" aria-label="SOL"><use href="#solLogo"/></svg></span></th>
+                </tr>
+              </thead>
+              <tbody id="pumpTableBody"></tbody>
+              <tfoot>
+                <tr id="customMcRow" style="border-top:1px solid rgba(127,90,240,0.25);">
+                  <td class="mc-label" style="padding-top:10px;">
+                    $<input id="customMcInput" type="text" placeholder="69M"
+                      style="background:none;border:none;border-bottom:1px solid rgba(127,90,240,0.4);color:var(--text-1);font-family:var(--font);font-size:12px;font-weight:600;width:72px;outline:none;padding:2px 0;margin-left:2px;"
+                      oninput="renderCustomMcRow()" />
+                  </td>
+                  <td id="cmSolNeeded" style="padding-top:10px;font-size:12px;font-family:var(--mono);color:var(--text-2);">—</td>
+                  <td id="cmPoolTok" class="pct-cell" style="padding-top:10px;font-size:12px;font-family:var(--mono);">—</td>
+                  <td id="cmLeftover"  style="padding-top:10px;font-size:12px;font-family:var(--mono);font-weight:700;">—</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Pons v2 (Robinhood) launch-curve calculator -->
+          <div id="ponsCalc" style="display:none;">
+            <div class="pump-header">
+              <span class="pump-title">Pons Launch Curve<span class="info-tip" tabindex="0">i<span class="tip-box"><b>Target MC</b>: the market cap you want to relaunch at.<br><b>ETH Needed</b>: the ETH to reach that market cap, including the 4.2 ETH that seeds the pool.<br><b>% Supply Purchased</b>: share of the 1B supply bought to get there.<br><b>Leftover ETH</b>: your recovered ETH minus what is needed, which is what you keep.</span></span></span>
+              <div class="sol-price-badge">
+                <svg class="tok tok-eth price-tok" aria-label="ETH"><use href="#ethLogo"/></svg>$<input type="number" id="ethPriceInput" class="sol-price-edit" value="2500" min="1" max="9999999" step="1" oninput="_ethUserSet=true;renderPonsTable();renderPonsCustomMcRow()" />
+              </div>
+            </div>
+            <table class="mc-table">
+              <thead>
+                <tr>
+                  <th>Target MC</th>
+                  <th title="Total to reach that market cap, in the selected display currency: 4.2 ETH to graduate the curve plus the ETH bought in the Uniswap v4 pool afterward, so targets above graduation need more than 4.2 ETH. GRAD marks the 4.2 ETH graduation point."><span class="disp-unit"><svg class="tok tok-eth th-tok" aria-label="ETH"><use href="#ethLogo"/></svg></span> Needed</th>
+                  <th title="Share of the 1B supply purchased to reach that market cap.">% Supply Purchased</th>
+                  <th title="Recovered minus what is needed, in the selected display currency: what you keep.">Leftover <span class="disp-unit"><svg class="tok tok-eth th-tok" aria-label="ETH"><use href="#ethLogo"/></svg></span></th>
+                </tr>
+              </thead>
+              <tbody id="ponsTableBody"></tbody>
+              <tfoot>
+                <tr id="ponsCustomMcRow" style="border-top:1px solid rgba(127,90,240,0.25);">
+                  <td class="mc-label" style="padding-top:10px;">
+                    $<input id="ponsCustomMcInput" type="text" placeholder="69M"
+                      style="background:none;border:none;border-bottom:1px solid rgba(127,90,240,0.4);color:var(--text-1);font-family:var(--font);font-size:12px;font-weight:600;width:72px;outline:none;padding:2px 0;margin-left:2px;"
+                      oninput="renderPonsCustomMcRow()" />
+                  </td>
+                  <td id="pcEthNeeded" style="padding-top:10px;font-size:12px;font-family:var(--mono);color:var(--text-2);">—</td>
+                  <td id="pcPctSupply" class="pct-cell" style="padding-top:10px;font-size:12px;font-family:var(--mono);">—</td>
+                  <td id="pcLeftover"  style="padding-top:10px;font-size:12px;font-family:var(--mono);font-weight:700;">—</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div id="meteoraCalc" style="display:none;">
+            <div class="pump-header">
+              <span class="pump-title">Meteora AMM Pool</span>
+              <div class="sol-price-badge"><svg class="tok tok-sol price-tok" aria-label="SOL"><use href="#solLogo"/></svg>$<input type="number" id="meteoraSolPrice" class="sol-price-edit" value="150" min="1" max="99999" step="1" oninput="renderAmmCalc('meteora')" /></div>
+            </div>
+            <div class="lp-deposit-row">
+              <span class="lp-deposit-lbl">LP deposit</span>
+              <input type="number" id="meteoraDeposit" class="lp-deposit-input" min="0" step="0.01" oninput="onLpDepositInput('meteora')" />
+              <span class="lp-deposit-unit" id="meteoraDepositUnit">SOL</span>
+              <button type="button" class="lp-max-btn" onclick="setLpDepositMax('meteora')">Max</button>
+              <span class="lp-deposit-hint" id="meteoraDepositHint">of — recovered</span>
+            </div>
+            <div class="amm-grid has-treasury">
+              <div class="amm-card">
+                <div class="amm-card-label">Your <svg class="tok tok-sol th-tok" aria-label="SOL"><use href="#solLogo"/></svg> Side</div>
+                <div class="amm-card-value" id="meteoraSolSide">—</div>
+                <div class="amm-card-sub" id="meteoraSolUsd">—</div>
+              </div>
+              <div class="amm-card">
+                <div class="amm-card-label">Token Side Value</div>
+                <div class="amm-card-value" id="meteoraTokenSide">—</div>
+                <div class="amm-card-sub" id="meteoraTokenSideSub">matched to your side</div>
+              </div>
+              <div class="amm-card highlight">
+                <div class="amm-card-label">Total Pool Value</div>
+                <div class="amm-card-value" id="meteoraPoolTotal">—</div>
+                <div class="amm-card-sub" id="meteoraPoolSol">—</div>
+              </div>
+              <div class="amm-card treasury">
+                <div class="amm-card-label">Leftover Tokens</div>
+                <div class="amm-card-value" id="meteoraLeftover">—</div>
+                <div class="amm-card-sub" id="meteoraLeftoverUsd">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="raydiumCalc" style="display:none;">
+            <div class="pump-header">
+              <span class="pump-title">Raydium AMM Pool</span>
+              <div class="sol-price-badge"><svg class="tok tok-sol price-tok" aria-label="SOL"><use href="#solLogo"/></svg>$<input type="number" id="raydiumSolPrice" class="sol-price-edit" value="150" min="1" max="99999" step="1" oninput="renderAmmCalc('raydium')" /></div>
+            </div>
+            <div class="lp-deposit-row">
+              <span class="lp-deposit-lbl">LP deposit</span>
+              <input type="number" id="raydiumDeposit" class="lp-deposit-input" min="0" step="0.01" oninput="onLpDepositInput('raydium')" />
+              <span class="lp-deposit-unit" id="raydiumDepositUnit">SOL</span>
+              <button type="button" class="lp-max-btn" onclick="setLpDepositMax('raydium')">Max</button>
+              <span class="lp-deposit-hint" id="raydiumDepositHint">of — recovered</span>
+            </div>
+            <div class="amm-grid has-treasury">
+              <div class="amm-card">
+                <div class="amm-card-label">Your <svg class="tok tok-sol th-tok" aria-label="SOL"><use href="#solLogo"/></svg> Side</div>
+                <div class="amm-card-value" id="raydiumSolSide">—</div>
+                <div class="amm-card-sub" id="raydiumSolUsd">—</div>
+              </div>
+              <div class="amm-card">
+                <div class="amm-card-label">Token Side Value</div>
+                <div class="amm-card-value" id="raydiumTokenSide">—</div>
+                <div class="amm-card-sub" id="raydiumTokenSideSub">matched to your side</div>
+              </div>
+              <div class="amm-card highlight">
+                <div class="amm-card-label">Total Pool Value</div>
+                <div class="amm-card-value" id="raydiumPoolTotal">—</div>
+                <div class="amm-card-sub" id="raydiumPoolSol">—</div>
+              </div>
+              <div class="amm-card treasury">
+                <div class="amm-card-label">Leftover Tokens</div>
+                <div class="amm-card-value" id="raydiumLeftover">—</div>
+                <div class="amm-card-sub" id="raydiumLeftoverUsd">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="uniswapCalc" style="display:none;">
+            <div class="pump-header">
+              <span class="pump-title" id="uniswapCalcTitle">Uniswap Pool</span>
+              <div class="sol-price-badge"><span id="uniswapPriceLabel"><svg class="tok tok-eth" aria-label="ETH"><use href="#ethLogo"/></svg></span> $<input type="number" id="uniswapNativePrice" class="sol-price-edit" value="3000" min="1" max="9999999" step="1" oninput="renderAmmCalc('uniswap')" /></div>
+            </div>
+            <div class="lp-deposit-row">
+              <span class="lp-deposit-lbl">LP deposit</span>
+              <input type="number" id="uniswapDeposit" class="lp-deposit-input" min="0" step="0.0001" oninput="onLpDepositInput('uniswap')" />
+              <span class="lp-deposit-unit" id="uniswapDepositUnit">ETH</span>
+              <button type="button" class="lp-max-btn" onclick="setLpDepositMax('uniswap')">Max</button>
+              <span class="lp-deposit-hint" id="uniswapDepositHint">of — recovered</span>
+            </div>
+            <div class="amm-grid has-treasury">
+              <div class="amm-card">
+                <div class="amm-card-label" id="uniswapNativeLabel">Your ETH Side</div>
+                <div class="amm-card-value" id="uniswapSolSide">—</div>
+                <div class="amm-card-sub" id="uniswapSolUsd">—</div>
+              </div>
+              <div class="amm-card">
+                <div class="amm-card-label">Token Side Value</div>
+                <div class="amm-card-value" id="uniswapTokenSide">—</div>
+                <div class="amm-card-sub" id="uniswapTokenSideSub">matched to your side</div>
+              </div>
+              <div class="amm-card highlight">
+                <div class="amm-card-label">Total Pool Value</div>
+                <div class="amm-card-value" id="uniswapPoolTotal">—</div>
+                <div class="amm-card-sub" id="uniswapPoolSol">—</div>
+              </div>
+              <div class="amm-card treasury">
+                <div class="amm-card-label">Leftover Tokens</div>
+                <div class="amm-card-value" id="uniswapLeftover">—</div>
+                <div class="amm-card-sub" id="uniswapLeftoverUsd">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Solana → EVM (Uniswap) cross-chain calc -->
+          <div id="solCrossUniCalc" style="display:none;">
+            <div class="pump-header">
+              <span class="pump-title">Uniswap Pool</span>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <div class="sol-price-badge"><svg class="tok tok-sol price-tok" aria-label="SOL"><use href="#solLogo"/></svg>$<input type="number" id="crossSolRef" class="sol-price-edit" value="150" min="1" max="99999" step="1" oninput="renderSolCrossUni()" /></div>
+                <div class="sol-price-badge"><span id="crossNativeLabel"><svg class="tok tok-eth" aria-label="ETH"><use href="#ethLogo"/></svg></span> $<input type="number" id="crossEthRef" class="sol-price-edit" value="3000" min="1" max="9999999" step="1" oninput="renderSolCrossUni()" /></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;margin:8px 0 10px;">
+              <button class="sol-cross-chain-btn active" onclick="selectSolCrossChain('eth',this)">ETH</button>
+              <button class="sol-cross-chain-btn" onclick="selectSolCrossChain('base',this)">Base</button>
+              <button class="sol-cross-chain-btn" onclick="selectSolCrossChain('bnb',this)">BNB</button>
+              <button class="sol-cross-chain-btn" onclick="selectSolCrossChain('robinhood',this)">Robinhood</button>
+            </div>
+            <div class="lp-deposit-row">
+              <span class="lp-deposit-lbl">LP deposit</span>
+              <input type="number" id="crossUniDeposit" class="lp-deposit-input" min="0" step="0.0001" oninput="onLpDepositInput('solcrossuni')" />
+              <span class="lp-deposit-unit" id="crossUniDepositUnit">ETH</span>
+              <button type="button" class="lp-max-btn" onclick="setLpDepositMax('solcrossuni')">Max</button>
+              <span class="lp-deposit-hint" id="crossUniDepositHint">of — recovered</span>
+            </div>
+            <div class="amm-grid has-treasury">
+              <div class="amm-card">
+                <div class="amm-card-label" id="crossUniNativeLabel">Your ETH Side</div>
+                <div class="amm-card-value" id="crossUniEthSide">—</div>
+                <div class="amm-card-sub" id="crossUniEthUsd">—</div>
+              </div>
+              <div class="amm-card">
+                <div class="amm-card-label">Token Side Value</div>
+                <div class="amm-card-value" id="crossUniTokenSide">—</div>
+                <div class="amm-card-sub" id="crossUniTokenSideSub">matched to your side</div>
+              </div>
+              <div class="amm-card highlight">
+                <div class="amm-card-label">Total Pool Value</div>
+                <div class="amm-card-value" id="crossUniPoolTotal">—</div>
+                <div class="amm-card-sub" id="crossUniPoolEth">—</div>
+              </div>
+              <div class="amm-card treasury">
+                <div class="amm-card-label">Leftover Tokens</div>
+                <div class="amm-card-value" id="crossUniLeftover">—</div>
+                <div class="amm-card-sub" id="crossUniLeftoverUsd">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /results -->
+
+    </div>
+  </div>
+
+  <p class="calc-disclaimer">Figures shown are estimates for illustrative purposes only, based on current on-chain liquidity and market conditions. Actual recoverable amounts may vary with market volatility, slippage, and execution, and remain subject to protocol discretion. This is not financial advice.</p>
+
+</div>
+
+<script>
+  let currentChain = 'solana';
+  let poolData = null;
+  let currentPlatform = 'pumpfun';
+  let crossChainMode = false; // true when EVM tab shows Solana platforms
+  // Display denomination for the recovery figures (SOL / ETH). Display-only: never changes the recovery math.
+  let displayDenom = 'SOL';      // the quote token the figures are shown in
+  let denomUserSet = false;      // a manual toggle overrides the destination default until the next destination pick
+  let solCrossUniChain = 'eth'; // sub-chain for Solana → Uniswap
+
+  const PLATFORM_FEE = 0.15;
+
+  // pump.fun Raydium graduation pool constants
+  // At graduation: 85 SOL + 207M tokens (1B total supply - 793M sold in bonding curve)
+  const PUMP_K       = 85 * 207_000_000; // pump.fun graduation constant-product k (85 SOL × 207M tokens = 17.595B)
+  const PUMP_GRAD_SOL = 85;              // pump.fun bonding curve graduates at ~85 SOL bonded -> Raydium/pumpswap pool
+  const PUMP_MC_PRESETS = [100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 50_000_000];
+
+  // ── Pons v2 (Robinhood chain 4663) launch-curve constants ──
+  // Pons v2 standard config, read on-chain 2026-09-12 from curves 0x639a7cd2… / 0x9314af45…
+  // Native quote = ETH; graduates into a locked Uniswap v4 pool.
+  let PONS_PHANTOM_ETH = 1.68;      // phantomQuote — virtual quote reserve
+  let PONS_GRAD_ETH    = 4.2;       // graduationThreshold — real ETH collected to graduate
+  const PONS_SUPPLY       = 1_000_000_000; // token supply
+  const PONS_CURVE_FEE_BPS = 100;   // 1% trade fee
+  const PONS_LAUNCH_FEE_ETH = 0.0005;
+  const PONS_MC_PRESETS = [100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 50_000_000];   // match pump; migrations can only enter post-graduation (curve must be filled first), so no sub-graduation MCs
+
+  function setChain(chain) {
+    currentChain = chain;
+    crossChainMode = false;
+    document.querySelectorAll('.chain-tab').forEach(t => t.classList.toggle('active', t.dataset.chain === chain));
+    const isSolana = chain === 'solana';
+    document.getElementById('solanaPlatforms').style.display = isSolana ? 'contents' : 'none';
+    document.getElementById('uniswapBtn').style.display    = isSolana ? 'none' : '';
+    document.getElementById('pancakeBtn').style.display    = chain === 'bsc' ? '' : 'none';
+    document.getElementById('evmPumpBtn').style.display    = isSolana ? 'none' : '';
+    document.getElementById('evmMeteoraBtn').style.display = isSolana ? 'none' : '';
+    document.getElementById('evmRaydiumBtn').style.display = isSolana ? 'none' : '';
+    document.getElementById('evmPonsBtn').style.display    = isSolana ? 'none' : '';
+    if (isSolana) {
+      selectPlatform('pumpfun');
+    } else {
+      const defaultEvmBtn = chain === 'bsc' ? document.getElementById('pancakeBtn') : document.getElementById('uniswapBtn');
+      const defaultEvmTitle = chain === 'bsc' ? 'PancakeSwap Pool' : 'Uniswap Pool';
+      selectEvmPlatform(defaultEvmBtn, defaultEvmTitle);
+    }
+  }
+
+  function selectPlatform(p) {
+    crossChainMode = false;
+    currentPlatform = p;
+    document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`.platform-btn[onclick="selectPlatform('${p}')"]`);
+    if (btn) btn.classList.add('active');
+    document.getElementById('pumpCalc').style.display        = p === 'pumpfun'    ? 'block' : 'none';
+    document.getElementById('ponsCalc').style.display        = p === 'ponsv2'     ? 'block' : 'none';
+    document.getElementById('meteoraCalc').style.display     = p === 'meteora'    ? 'block' : 'none';
+    document.getElementById('raydiumCalc').style.display     = p === 'raydium'    ? 'block' : 'none';
+    document.getElementById('uniswapCalc').style.display     = 'none';
+    document.getElementById('solCrossUniCalc').style.display = p === 'sol-uniswap' ? 'block' : 'none';
+    document.getElementById('evmCrossBar').style.display     = 'none';
+    if (p === 'sol-uniswap') {
+      // Auto-fill SOL price from pool data if available
+      if (poolData && poolData.pool.nativeSymbol === 'SOL' && poolData.pool.nativePrice > 0) {
+        document.getElementById('crossSolRef').value = Math.round(poolData.pool.nativePrice);
+      }
+      fetchSolCrossNativePrice(solCrossUniChain); // resolves + re-renders sol-uniswap when the price lands
+    }
+    applyDestinationDenom(p);
+    renderActivePlatform(); // render whichever platform is now active (incl. pump.fun)
+  }
+
+  // Default the display currency to the destination's quote token. ETH-quoted destinations
+  // (Pons, Uniswap) default to ETH; SOL-quoted ones (pumpswap, Meteora, Raydium) default to SOL.
+  // A manual toggle overrides only until the user picks a different destination (reset here).
+  // `destSym` optionally forces the destination currency (used by the EVM same-chain selectors).
+  function applyDestinationDenom(platform, destSym) {
+    if (!poolData || !poolData.pool || !poolData.pool.nativeSymbol) return;
+    let target = destSym;
+    if (!target) {
+      const ethDest = platform === 'ponsv2' || platform === 'sol-uniswap' || platform === 'uniswap';
+      const solDest = platform === 'pumpfun' || platform === 'meteora' || platform === 'raydium';
+      target = ethDest ? 'ETH' : solDest ? 'SOL' : poolData.pool.nativeSymbol;
+    }
+    if (target !== 'SOL' && target !== 'ETH') target = 'SOL';   // only SOL/ETH are toggle currencies
+    denomUserSet = false;                       // a new destination resets any prior manual override
+    setDenom(target, false);
+  }
+
+  function fetchSolCrossNativePrice(chain) {
+    const dxChain = chain === 'bnb' ? 'bsc' : chain === 'base' ? 'base' : 'ethereum';
+    fetch('api/native-price?chain=' + dxChain)
+      .then(r => r.json())
+      .then(d => {
+        if (d.priceUsd > 0) {
+          document.getElementById('crossEthRef').value = Math.round(d.priceUsd);
+          renderSolCrossUni();
+        }
+      }).catch(() => {});
+  }
+
+  function selectSolCrossChain(chain, btn) {
+    solCrossUniChain = chain;
+    document.querySelectorAll('.sol-cross-chain-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const sym = chain === 'bnb' ? 'BNB' : 'ETH';
+    document.getElementById('crossNativeLabel').innerHTML = tok(sym).trim();
+    document.getElementById('crossUniNativeLabel').innerHTML = 'Your ' + tok(sym) + ' Side';
+    lpDepositTouched['solcrossuni'] = false; // recovered amount changes with the target chain — refill to full
+    fetchSolCrossNativePrice(chain);
+    renderSolCrossUni();
+  }
+
+  function selectEvmPlatform(btn, title) {
+    crossChainMode = false;
+    currentPlatform = 'uniswap';
+    document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.getElementById('pumpCalc').style.display        = 'none';
+    document.getElementById('ponsCalc').style.display        = 'none';
+    document.getElementById('meteoraCalc').style.display     = 'none';
+    document.getElementById('raydiumCalc').style.display     = 'none';
+    document.getElementById('uniswapCalc').style.display     = 'block';
+    document.getElementById('solCrossUniCalc').style.display = 'none';
+    document.getElementById('evmCrossBar').style.display     = 'none';
+    document.getElementById('uniswapCalcTitle').textContent  = title;
+    // Same-chain EVM destination: default the display to the pool's native currency (ETH, or SOL fallback).
+    applyDestinationDenom('uniswap', (poolData?.pool?.nativeSymbol === 'ETH') ? 'ETH' : poolData?.pool?.nativeSymbol);
+    renderAmmCalc('uniswap');
+  }
+
+  function selectEvmCross(btn, platform) {
+    crossChainMode = true;
+    currentPlatform = platform;
+    document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('pumpCalc').style.display    = platform === 'pumpfun' ? 'block' : 'none';
+    document.getElementById('ponsCalc').style.display    = platform === 'ponsv2'  ? 'block' : 'none';
+    document.getElementById('meteoraCalc').style.display = platform === 'meteora' ? 'block' : 'none';
+    document.getElementById('raydiumCalc').style.display = platform === 'raydium' ? 'block' : 'none';
+    document.getElementById('uniswapCalc').style.display     = 'none';
+    document.getElementById('solCrossUniCalc').style.display = 'none';
+    // Sync native price from uniswapNativePrice
+    const np = document.getElementById('uniswapNativePrice').value;
+    document.getElementById('evmCrossNativePrice').value = np;
+    const sym = (poolData?.pool?.nativeSymbol) || 'ETH';
+    document.getElementById('evmCrossNativeSym').textContent = sym;
+    // Auto-fetch SOL price if not already set
+    const solEl = document.getElementById('evmCrossSolPrice');
+    if (!solEl._solFetched) {
+      fetch('api/sol-price').then(r => r.json()).then(d => {
+        if (d.solPriceUsd > 0) {
+          const sp = Math.round(d.solPriceUsd);
+          solEl.value = sp;
+          solEl._solFetched = true;
+          ['solPriceInput','meteoraSolPrice','raydiumSolPrice'].forEach(id => {
+            document.getElementById(id).value = sp;
+          });
+          onEvmCrossChange();
+        }
+      }).catch(() => {});
+    }
+    // EVM to Solana pathways (pumpswap / Meteora / Raydium / Pons): default the display to the destination currency.
+    applyDestinationDenom(platform);
+    if (platform === 'meteora') renderAmmCalc('meteora');
+    if (platform === 'raydium') renderAmmCalc('raydium');
+    if (platform === 'pumpfun') renderPumpTable();
+    if (platform === 'ponsv2') { renderPonsTable(); renderPonsCustomMcRow(); }
+  }
+
+  // Returns net SOL regardless of chain/mode
+  function getEffectiveNetSol(s) {
+    if (!poolData) return 0;
+    const { pool } = poolData;
+    if (crossChainMode) {
+      const nativePrice = parseFloat(document.getElementById('evmCrossNativePrice').value) || 0;
+      const solPrice    = parseFloat(document.getElementById('evmCrossSolPrice').value) || 0;
+      return (nativePrice > 0 && solPrice > 0) ? s.netRecovered * nativePrice / solPrice : 0;
+    }
+    if (pool.nativeSymbol === 'SOL') return s.netRecovered;
+    // Stablecoin Solana pool
+    const solPrice = parseFloat(document.getElementById('solPriceInput').value) || 0;
+    return solPrice > 0 ? s.netRecovered / solPrice : 0;
+  }
+
+  function onEvmCrossChange() {
+    if (!crossChainMode) return;
+    // Keep visible SOL price inputs in sync with the cross-chain bar
+    const sp = document.getElementById('evmCrossSolPrice').value;
+    ['solPriceInput','meteoraSolPrice','raydiumSolPrice'].forEach(id => {
+      document.getElementById(id).value = sp;
+    });
+    if (currentPlatform === 'meteora') renderAmmCalc('meteora');
+    else if (currentPlatform === 'raydium') renderAmmCalc('raydium');
+    else if (currentPlatform === 'pumpfun') renderPumpTable();
+  }
+
+  function renderSolCrossUni() {
+    if (!poolData) return;
+    const { pool } = poolData;
+    const sliderPct = parseInt(document.getElementById('customSlider').value) || 50;
+    const s = calcScenario(pool.tokensInPool, pool.nativeInPool, pool.totalSupply, sliderPct);
+    const solPrice = parseFloat(document.getElementById('crossSolRef').value) || 0;
+    const nativePrice = parseFloat(document.getElementById('crossEthRef').value) || 0;
+    const sym = solCrossUniChain === 'bnb' ? 'BNB' : 'ETH';
+    // Recovered value expressed in the target native (ETH/BNB): SOL → USD → native.
+    const netSol = pool.nativeSymbol === 'SOL' ? s.netRecovered : (solPrice > 0 ? s.netRecovered / solPrice : 0);
+    const recovered = (nativePrice > 0 && solPrice > 0) ? netSol * solPrice / nativePrice : 0;
+    renderLpPool('solcrossuni', recovered, sym, nativePrice, 4, {
+      nativeSide: 'crossUniEthSide',   nativeUsd: 'crossUniEthUsd',
+      tokenSide:  'crossUniTokenSide', tokenSideSub: 'crossUniTokenSideSub',
+      poolTotal:  'crossUniPoolTotal', poolNative: 'crossUniPoolEth',
+      leftover:   'crossUniLeftover',  leftoverUsd: 'crossUniLeftoverUsd',
+      deposit:    'crossUniDeposit',   depositUnit: 'crossUniDepositUnit', depositHint: 'crossUniDepositHint',
+      nativeLabel: 'crossUniNativeLabel',
+    });
+  }
+
+  // ── Formatting ──
+  function fmt(n) {
+    if (n == null || isNaN(n)) return '—';
+    const a = Math.abs(n);
+    if (a >= 1e9) return (n/1e9).toFixed(3) + 'B';
+    if (a >= 1e6) return (n/1e6).toFixed(2) + 'M';
+    if (a >= 1e3) return (n/1e3).toFixed(1) + 'K';
+    return n.toFixed(0);
+  }
+  function fmtN(n, sym) {
+    if (n == null || isNaN(n)) return '—';
+    return n.toFixed(2) + ' ' + (sym || 'SOL');
+  }
+  // ── Inline token logos + leftover cell (single source of truth) ──
+  function tok(sym, cls) {
+    if (sym === 'SOL') return `<svg class="tok tok-sol${cls ? ' ' + cls : ''}" aria-label="SOL"><use href="#solLogo"/></svg>`;
+    if (sym === 'ETH') return `<svg class="tok tok-eth${cls ? ' ' + cls : ''}" aria-label="ETH"><use href="#ethLogo"/></svg>`;
+    return ' ' + (sym || '');   // BNB / others → plain text fallback
+  }
+  function fmtNHtml(n, sym) {
+    if (n == null || isNaN(n)) return '—';
+    return n.toFixed(2) + tok(sym || 'SOL');
+  }
+  // ── Global display-currency layer (SOL ⇄ ETH) ──
+  // The page carries native amounts in whatever token the source/pathway is quoted in (SOL, ETH, BNB).
+  // This converts the DISPLAY of any native amount to the chosen currency via USD, keeping the dollar value constant:
+  // usd = amount * price(fromSym); displayAmount = usd / price(displaySym). All USD figures stay untouched.
+  // The USD price for each currency comes from the live, user-editable price inputs.
+  function priceOf(sym) {
+    const s = (sym || '').toUpperCase();
+    if (s === 'SOL') return parseFloat(document.getElementById('solPriceInput').value) || 0;
+    if (s === 'ETH') return parseFloat(document.getElementById('ethPriceInput').value) || 0;
+    // BNB / other EVM natives: fall back to the cross-chain native price input when present.
+    const np = document.getElementById('evmCrossNativePrice');
+    return np ? (parseFloat(np.value) || 0) : 0;
+  }
+  // Decimals suited to each currency's typical magnitude.
+  function dispDecimals(sym) { return (sym || '').toUpperCase() === 'ETH' ? 3 : 2; }
+  // Convert `amount` (in fromSym) to the active display currency. Falls back to fromSym if a price is missing.
+  function toDisplay(amount, fromSym) {
+    const from = (fromSym || 'SOL').toUpperCase();
+    const target = displayDenom;
+    if (from === target) return { amount, sym: from };
+    const pf = priceOf(from), pt = priceOf(target);
+    if (pf <= 0 || pt <= 0) return { amount, sym: from };   // graceful fallback: keep the native token
+    return { amount: amount * pf / pt, sym: target };
+  }
+  // USD value of a native amount, independent of the display currency (always via its own token price).
+  function dispUsd(amount, fromSym) {
+    const p = priceOf(fromSym);
+    return p > 0 ? amount * p : 0;
+  }
+  // HTML for a native amount rendered in the active display currency.
+  function fmtDispHtml(amount, fromSym) {
+    const d = toDisplay(amount, fromSym);
+    return d.amount.toFixed(dispDecimals(d.sym)) + tok(d.sym);
+  }
+  // Leftover (+/- two-tone) cell for a native amount, converted to the display currency with constant USD.
+  function dispLeftoverCell(amount, fromSym, hasUsd) {
+    const d = toDisplay(amount, fromSym);
+    const usd = hasUsd ? dispUsd(amount, fromSym) : 0;
+    return leftoverCell(d.amount, dispDecimals(d.sym), d.sym, usd, hasUsd);
+  }
+  // The token icon for the current display currency, for column headers / inline units.
+  function dispTok() { return tok(displayDenom); }
+
+  // Back-compat shims for the recovery figures (headline / scenarios / custom participation),
+  // which pass a SOL amount tagged with the pool's native symbol.
+  function denomFor(amount, poolSym) { return toDisplay(amount, poolSym); }
+  function denomUsd(amount, poolSym) { return priceOf(poolSym) > 0 ? dispUsd(amount, poolSym) : null; }
+  function fmtDenomHtml(amount, poolSym) { return fmtDispHtml(amount, poolSym); }
+  // Switch the global display currency and re-render EVERY native amount on the page. `manual` marks a user override.
+  function setDenom(denom, manual) {
+    displayDenom = denom === 'ETH' ? 'ETH' : 'SOL';
+    if (manual) denomUserSet = true;
+    const sol = displayDenom === 'SOL';
+    document.getElementById('denomTabSol').classList.toggle('active', sol);
+    document.getElementById('denomTabEth').classList.toggle('active', !sol);
+    // One honest, direction-neutral line: converting the display does not change which token a pathway actually uses.
+    const nativeSym = (poolData && poolData.pool && poolData.pool.nativeSymbol) || 'SOL';
+    document.getElementById('denomHint').textContent = (displayDenom === nativeSym)
+      ? 'Amounts shown in ' + displayDenom + ', the source pool token.'
+      : displayDenom + ' figures are the equivalent value for comparison, not the token you pay or receive.';
+    // Pull a live ETH/USD price the first time ETH is shown (user edits to the input win thereafter).
+    if (!sol && !_ethUserSet && !_ethFetched) { _ethFetched = true; refreshEthPrice().then(() => refreshAllDisplayAmounts()); }
+    refreshAllDisplayAmounts();
+  }
+  // The toggle is available for any native-quoted source (SOL or EVM), so either side can switch to the other.
+  function syncDenomToggle() {
+    const has = !!(poolData && poolData.pool && poolData.pool.nativeSymbol);
+    document.getElementById('denomRow').style.display = has ? '' : 'none';
+  }
+  // Re-render every native amount that follows the display currency: pool status, recovery figures, active table.
+  function refreshAllDisplayAmounts() {
+    if (!poolData) return;
+    const { pool } = poolData;
+    // Pool Status: native liquidity in pool + its label icon, in the display currency.
+    const rNative = document.getElementById('rNativeInPool');
+    if (rNative) rNative.innerHTML = fmtDispHtml(pool.nativeInPool, pool.nativeSymbol);
+    const rNativeLabel = document.getElementById('rNativeLabel');
+    if (rNativeLabel) rNativeLabel.innerHTML = dispTok().trim() + ' in Pool';
+    // Headline + scenario cards + custom participation.
+    const scen = [25, 50, 75].map(pct => {
+      const s = calcScenario(pool.tokensInPool, pool.nativeInPool, pool.totalSupply, pct);
+      return { participationPct: pct, netPercentRecovered: s.netPctRecovered, netRecovered: s.netRecovered, feeAmount: s.feeAmount, rating: s.rating };
+    });
+    renderScenarios(scen, pool.nativeSymbol);
+    onSlider(parseInt(document.getElementById('customSlider').value) || 50);   // also calls renderActivePlatform()
+    syncTableHeaderUnits();
+  }
+  // Swap the Needed / Leftover column header icons in both launch tables to the display currency.
+  function syncTableHeaderUnits() {
+    document.querySelectorAll('.disp-unit').forEach(el => { el.innerHTML = dispTok(); });
+  }
+  // Back-compat alias retained for existing callers.
+  function refreshRecoveryFigures() { refreshAllDisplayAmounts(); }
+  // Quote-token coin mark for the LP pair dropdown — always an icon, never a bare ticker.
+  const COIN_LOGOS = { USDC: 'usdcLogo', USDT: 'usdtLogo', PYUSD: 'pyusdLogo', DAI: 'daiLogo', USDS: 'daiLogo' };
+  function coinMark(sym) {
+    const s = (sym || '').toUpperCase();
+    if (s === 'SOL') return '<svg class="coin-tok" aria-label="SOL"><use href="#solLogo"/></svg>';
+    if (s === 'ETH' || s === 'WETH') return '<svg class="coin-tok coin-eth" aria-label="ETH"><use href="#ethLogo"/></svg>';
+    if (COIN_LOGOS[s]) return `<svg class="coin-tok" aria-label="${s}"><use href="#${COIN_LOGOS[s]}"/></svg>`;
+    return '<svg class="coin-tok" aria-label="token"><use href="#coinGeneric"/></svg>';
+  }
+  function quoteBadge(sym) {
+    const s = sym || '';
+    return `${coinMark(s)}<span class="q-tk">${s}</span>`;
+  }
+  // Two-tone leftover cell: white/red amount + green/muted USD accent (never all-green).
+  // Large amounts abbreviate (28.8K) with the exact figure on hover, so the column stays scannable.
+  function leftoverCell(amt, decimals, sym, usdVal, hasUsd) {
+    const ok = amt >= 0, abs = Math.abs(amt);
+    const short = abs >= 1000 ? fmt(abs) : abs.toFixed(decimals);
+    const amtStr = (ok ? '+' : '-') + short;
+    const exact = (ok ? '+' : '-') + abs.toLocaleString('en-US', { maximumFractionDigits: decimals }) + ' ' + sym;
+    const usd = hasUsd ? `<div class="lo-usd ${ok ? 'pos' : 'neg'}">${fmtUsdSigned(usdVal)}</div>` : '';
+    return `<span class="lo-amt ${ok ? 'pos' : 'neg'}" title="${exact}">${amtStr}${tok(sym)}</span>${usd}`;
+  }
+  // Muted %-of-supply cell with a slim supply bar underneath.
+  function pctCell(pct) {
+    return `<div class="pct-wrap"><span>${pct.toFixed(1)}%</span><div class="pct-bar"><i style="width:${Math.min(100, pct).toFixed(1)}%"></i></div></div>`;
+  }
+  // Below-graduation target: a token can't migrate until its bonding curve fully graduates.
+  function migNA(reqLabel) {
+    return `<span class="mig-na" title="This target is below the ${reqLabel} graduation threshold. A token can only migrate once its bonding curve has fully graduated.">Migration not available</span>`;
+  }
+  // ── Shared USD formatters (single source of truth) ──
+  const fmtUsdAbbr   = v => { const a = Math.abs(v); if (a >= 1e9) return '$' + (a/1e9).toFixed(2) + 'B'; if (a >= 1e6) return '$' + (a/1e6).toFixed(2) + 'M'; if (a >= 1e3) return '$' + (a/1e3).toFixed(1) + 'K'; return '$' + Math.round(a); };
+  const fmtUsdFull   = v => '$' + Math.round(v).toLocaleString('en-US');
+  const fmtUsdSigned = v => (v >= 0 ? '+' : '-') + fmtUsdAbbr(v);
+  function fmtMC(usd) {
+    if (usd >= 1e6) return '$' + (usd/1e6).toFixed(0) + 'M';
+    if (usd >= 1e3) return '$' + (usd/1e3).toFixed(0) + 'K';
+    return '$' + usd;
+  }
+
+  // ── AMM formula (mirrors server exactly) ──
+  function calcScenario(tokensInPool, nativeInPool, totalSupply, pct) {
+    const k = tokensInPool * nativeInPool;
+    const available = Math.max(0, totalSupply - tokensInPool);
+    const tokensSwapped = Math.min(available * (pct / 100), available);
+    const finalTokens = tokensInPool + tokensSwapped;
+    const finalNative = k / finalTokens;
+    const nativeRecovered = nativeInPool - finalNative;
+    const feeAmount = nativeRecovered * PLATFORM_FEE;
+    const netRecovered = Math.max(0, nativeRecovered - feeAmount);
+    const netPctRecovered = nativeInPool > 0 ? (netRecovered / nativeInPool) * 100 : 0;
+    const rating = netPctRecovered >= 75 ? 'Excellent' : netPctRecovered >= 55 ? 'Good' : netPctRecovered >= 35 ? 'Fair' : 'Low';
+    return { nativeRecovered, feeAmount, netRecovered, netPctRecovered, rating };
+  }
+
+  // ── pump.fun launch cost formula ──
+  // Pool_SOL at target MC = sqrt(PUMP_K * MC_sol / 1e9)   [assumes pump.fun's fixed 1B supply]
+  // SOL Needed = the FULL Pool_SOL — it INCLUDES the ~85 SOL bonding-curve liquidity (not minus 85).
+  function calcPumpRow(targetMCusd, solPriceUsd, netRecoveredSol) {
+    if (!solPriceUsd || solPriceUsd <= 0) return null;
+    const mcSol = targetMCusd / solPriceUsd;
+    const poolSOL = Math.sqrt(PUMP_K * mcSol / 1e9);
+    // SOL Needed = the FULL pool SOL, INCLUDING the ~85 SOL bonding-curve liquidity.
+    // (An earlier version subtracted the 85, which hid the bonded SOL and overstated leftover.)
+    const solNeeded = poolSOL;
+    const poolTokens = poolSOL > 0 ? PUMP_K / poolSOL : 0;
+    const pctSupply = (1e9 - poolTokens) / 1e9 * 100;   // pump.fun supply = 1B; share PURCHASED (supply minus what's left in the pool). At graduation = 79.3% (793.1M sold on the curve).
+    const leftover = netRecoveredSol - solNeeded;
+    return { targetMCusd, mcSol, poolSOL, solNeeded, poolTokens, pctSupply, leftover, graduated: solNeeded >= PUMP_GRAD_SOL };
+  }
+
+  function renderPumpTable() {
+    if (!poolData) return;
+    const sliderPct = parseInt(document.getElementById('customSlider').value) || 50;
+    const { pool } = poolData;
+    const s = calcScenario(pool.tokensInPool, pool.nativeInPool, pool.totalSupply, sliderPct);
+    const netRecoveredSol = getEffectiveNetSol(s);
+    const solPrice = crossChainMode
+      ? parseFloat(document.getElementById('evmCrossSolPrice').value) || 0
+      : parseFloat(document.getElementById('solPriceInput').value) || 0;
+
+    const tbody = document.getElementById('pumpTableBody');
+    const hasUsd = solPrice > 0;
+    // Graduation baseline row: the ~85 SOL graduation cap, the entry point for every post-graduation target below.
+    let gradHtml = '';
+    if (hasUsd) {
+      const gradMcSol = PUMP_GRAD_SOL * 1e9 / 207_000_000;   // graduation pool FDV in SOL (matches the launch-mechanics panel)
+      const gradMcUsd = gradMcSol * solPrice;
+      const gr = calcPumpRow(gradMcUsd, solPrice, netRecoveredSol);
+      if (gr) {
+        gradHtml = `<tr class="grad-row">
+          <td class="mc-label">${fmtMC(gradMcUsd)}<span class="grad-cap">graduation</span></td>
+          <td>${fmtDispHtml(PUMP_GRAD_SOL, 'SOL')}</td>
+          <td class="pct-cell">${pctCell(gr.pctSupply)}</td>
+          <td>${dispLeftoverCell(gr.leftover, 'SOL', true)}</td>
+        </tr>`;
+      }
+    }
+    tbody.innerHTML = gradHtml + PUMP_MC_PRESETS.map(mc => {
+      const row = calcPumpRow(mc, solPrice, netRecoveredSol);
+      if (!row) return '';
+      return `<tr>
+        <td class="mc-label">${fmtMC(mc)}</td>
+        <td>${fmtDispHtml(row.solNeeded, 'SOL')}</td>
+        <td class="pct-cell">${pctCell(row.pctSupply)}</td>
+        <td>${dispLeftoverCell(row.leftover, 'SOL', hasUsd)}</td>
+      </tr>`;
+    }).join('');
+    syncTableHeaderUnits();
+  }
+
+  // ── Pons v2 launch-curve formula (constant-product, ETH-quoted) ──
+  // k = PONS_PHANTOM_ETH * PONS_SUPPLY. Given a target MC (USD) and ETH price:
+  //   mcEth = mcUsd / ethPrice
+  //   Q = sqrt(PONS_PHANTOM_ETH * mcEth)                 total quote reserve incl. phantom
+  //   ethNeeded = clamp(Q - PONS_PHANTOM_ETH, 0, PONS_GRAD_ETH)
+  //   tokensAcquired = PONS_SUPPLY - k / Q
+  function calcPonsRow(targetMCusd, ethPriceUsd) {
+    if (!ethPriceUsd || ethPriceUsd <= 0) return null;
+    // Graduated Uniswap-v4 pool model (mirrors pump's Raydium math): the pool holds the real graduation liquidity — PONS_GRAD_ETH of
+    // ETH paired with the reserved tokens (supply * phantom/(phantom+grad)). k = ETH*tokens; the ETH needed to hold the token at a
+    // market cap MC is sqrt(k * mcEth / supply). At the graduation FDV this equals PONS_GRAD_ETH; above it, more ETH is required.
+    const reservedTokens = PONS_SUPPLY * PONS_PHANTOM_ETH / (PONS_PHANTOM_ETH + PONS_GRAD_ETH); // ~285.7M pool tokens
+    const kPool = PONS_GRAD_ETH * reservedTokens;                                                // ~1.2e9 (real pool constant-product)
+    const mcEth = targetMCusd / ethPriceUsd;
+    const ethNeeded = Math.sqrt(kPool * mcEth / PONS_SUPPLY);
+    const poolTokens = ethNeeded > 0 ? kPool / ethNeeded : 0;
+    const pctSupply = (PONS_SUPPLY - poolTokens) / PONS_SUPPLY * 100;   // share PURCHASED (supply minus pool tokens). At graduation = 71.4% (714.3M sold on the curve; Pons reserves more for the pool than pump).
+    const graduated = ethNeeded >= PONS_GRAD_ETH;   // past the 4.2 ETH graduation liquidity
+    return { targetMCusd, mcEth, ethNeeded, poolTokens, pctSupply, graduated };
+  }
+
+  // Recovered value expressed in ETH (mirrors the pump table's recovered-SOL, converted via ETH price) — for Leftover ETH.
+  function ponsNetRecoveredEth(ethPrice) {
+    if (!poolData || !ethPrice) return 0;
+    const { pool } = poolData;
+    const sliderPct = parseInt(document.getElementById('customSlider').value) || 50;
+    const s = calcScenario(pool.tokensInPool, pool.nativeInPool, pool.totalSupply, sliderPct);
+    const solPrice = crossChainMode
+      ? parseFloat(document.getElementById('evmCrossSolPrice').value) || 0
+      : parseFloat(document.getElementById('solPriceInput').value) || 0;
+    const recoveredUsd = getEffectiveNetSol(s) * solPrice;   // universal recovered value in USD
+    return recoveredUsd > 0 ? recoveredUsd / ethPrice : 0;
+  }
+  function ponsLeftoverCell(ethPrice, ethNeeded) {
+    const net = ponsNetRecoveredEth(ethPrice);
+    if (!(net > 0)) return { html: '<span style="opacity:0.5;">—</span>', cls: '' };
+    const lo = net - ethNeeded;   // leftover in ETH; displayed in the active currency with constant USD
+    return { html: dispLeftoverCell(lo, 'ETH', ethPrice > 0), cls: '' };
+  }
+  let _ethUserSet = false, _ethFetched = false;
+  async function refreshEthPrice() {   // pull the live ETH/USD price (server-side, 60s cached) so the Pons table defaults to the current market price
+    try {
+      const r = await fetch('api/native-price?chain=ethereum');
+      const j = await r.json();
+      if (j && j.priceUsd > 0 && !_ethUserSet) {
+        const el = document.getElementById('ethPriceInput');
+        if (el && Math.round(j.priceUsd) !== parseFloat(el.value)) { el.value = Math.round(j.priceUsd); renderPonsTable(); renderPonsCustomMcRow(); }
+      }
+    } catch (e) {}
+  }
+  function renderPonsTable() {
+    const ethPrice = parseFloat(document.getElementById('ethPriceInput').value) || 0;
+    if (!_ethUserSet && !_ethFetched) { _ethFetched = true; refreshEthPrice(); }   // one-shot live ETH price on first render (user edits win thereafter)
+    const tbody = document.getElementById('ponsTableBody');
+    // Graduation baseline row: the real tradeable 4.2 ETH pool cap, the entry point for every post-graduation target below.
+    let gradHtml = '';
+    if (ethPrice > 0) {
+      const reservedTokens = PONS_SUPPLY * PONS_PHANTOM_ETH / (PONS_PHANTOM_ETH + PONS_GRAD_ETH);
+      const gradPoolEth = PONS_GRAD_ETH / reservedTokens * PONS_SUPPLY;   // tradeable pool cap in ETH (matches the mechanics tooltip)
+      const gradMcUsd = gradPoolEth * ethPrice;
+      const gr = calcPonsRow(gradMcUsd, ethPrice);
+      if (gr) {
+        const gLo = ponsLeftoverCell(ethPrice, PONS_GRAD_ETH);
+        gradHtml = `<tr class="grad-row">
+          <td class="mc-label">${fmtMC(gradMcUsd)}<span class="grad-cap">graduation</span></td>
+          <td>${fmtDispHtml(PONS_GRAD_ETH, 'ETH')}</td>
+          <td class="pct-cell">${pctCell(gr.pctSupply)}</td>
+          <td class="${gLo.cls}">${gLo.html}</td>
+        </tr>`;
+      }
+    }
+    tbody.innerHTML = gradHtml + PONS_MC_PRESETS.map(mc => {
+      const row = calcPonsRow(mc, ethPrice);
+      if (!row) return '';
+      const ethCell = fmtDispHtml(row.ethNeeded, 'ETH');
+      const lo = ponsLeftoverCell(ethPrice, row.ethNeeded);
+      return `<tr>
+        <td class="mc-label">${fmtMC(mc)}</td>
+        <td>${ethCell}</td>
+        <td class="pct-cell">${pctCell(row.pctSupply)}</td>
+        <td class="${lo.cls}">${lo.html}</td>
+      </tr>`;
+    }).join('');
+    syncTableHeaderUnits();
+  }
+
+  function renderPonsCustomMcRow() {
+    const mcVal = parseMC(document.getElementById('ponsCustomMcInput').value);
+    if (!mcVal || mcVal <= 0) {
+      ['pcEthNeeded','pcPctSupply','pcLeftover'].forEach(id => { const el = document.getElementById(id); el.textContent = '—'; el.className = ''; });
+      return;
+    }
+    const ethPrice = parseFloat(document.getElementById('ethPriceInput').value) || 0;
+    const row = calcPonsRow(mcVal, ethPrice);
+    if (!row) return;
+    document.getElementById('pcEthNeeded').innerHTML = fmtDispHtml(row.ethNeeded, 'ETH') + (row.graduated ? ' <span class="grad-chip">GRAD</span>' : '');
+    if (!row.graduated) {   // below 4.2 ETH graduation — migration can't happen
+      document.getElementById('pcPctSupply').innerHTML = '<span style="color:var(--text-4)">—</span>';
+      const el = document.getElementById('pcLeftover'); el.className = ''; el.innerHTML = migNA('4.2 ETH');
+      return;
+    }
+    document.getElementById('pcPctSupply').innerHTML = pctCell(row.pctSupply);
+    const lo = ponsLeftoverCell(ethPrice, row.ethNeeded);
+    const el = document.getElementById('pcLeftover'); el.className = lo.cls; el.innerHTML = lo.html;
+  }
+
+  function renderScenarios(scenarios, sym) {
+    const cur = parseInt(document.getElementById('customSlider').value) || 50;
+    document.getElementById('scenarioCards').innerHTML = (scenarios || []).map(s => {
+      const netPct = typeof s.netPercentRecovered === 'number' ? s.netPercentRecovered : 0;
+      const net = typeof s.netRecovered === 'number' ? s.netRecovered : 0;
+      const rating = s.rating || 'Low';
+      const pct = s.participationPct;
+      return `<div class="scenario-box ${rating.toLowerCase()}${pct === cur ? ' active' : ''}" data-pct="${pct}" role="button" tabindex="0" aria-label="Set participation to ${pct}%" onclick="setParticipation(${pct})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setParticipation(${pct});}">
+        <div class="sc-header">${pct}% Participation</div>
+        <div class="sc-amount">${fmtDenomHtml(net, sym)}</div>
+        <div class="sc-pct">${netPct.toFixed(1)}% net recovered</div>
+        <div class="progress-track"><div class="progress-fill fill-${rating}" style="width:${Math.min(100,netPct).toFixed(1)}%"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // #8 — clicking a scenario card drives the slider (one unified control)
+  function setParticipation(pct) {
+    document.getElementById('customSlider').value = pct;
+    onSlider(pct);
+  }
+
+  let activePoolIdx = 0;
+  function selectPool(idx) {
+    if (!poolData || !poolData.pool.pools || !poolData.pool.pools[idx]) return;
+    activePoolIdx = idx;
+    const pool = poolData.pool;
+    const sel = pool.pools[idx];
+    // Single-pool mode: the selected pool drives every downstream calc.
+    pool.tokensInPool = sel.tokensInPool;
+    pool.nativeInPool = sel.nativeInPool;
+    pool.liquidityUsd = sel.liquidityUsd;
+    pool.address = sel.address;
+    pool.dex = sel.dex;
+    pool.available = Math.max(0, pool.totalSupply - sel.tokensInPool);
+    pool.availablePct = pool.totalSupply > 0 ? (pool.available / pool.totalSupply) * 100 : 0;
+    // Pool Status — singular labels now that one pool is selected
+    document.getElementById('rLiq').textContent          = pool.liquidityUsd ? fmtUsdAbbr(pool.liquidityUsd) + ' liq' : '';
+    document.getElementById('rDex').textContent          = sel.dex || 'DEX';
+    document.getElementById('rNativeLabel').innerHTML    = dispTok().trim() + ' in Pool';
+    document.getElementById('rTokensLabel').textContent  = 'Tokens in Pool';
+    document.getElementById('rTokensInPool').textContent = fmt(pool.tokensInPool);
+    document.getElementById('rNativeInPool').innerHTML   = fmtDispHtml(pool.nativeInPool, pool.nativeSymbol);
+    document.getElementById('rTotalSupply').textContent  = fmt(pool.totalSupply);
+    document.getElementById('rAvailable').textContent    = fmt(pool.available);
+    document.getElementById('rAvailablePct').textContent = (pool.availablePct || 0).toFixed(1) + '% of supply';
+    // Recovery scenarios recomputed for THIS pool (mapped to renderScenarios field names)
+    const scen = [25, 50, 75].map(pct => {
+      const s = calcScenario(pool.tokensInPool, pool.nativeInPool, pool.totalSupply, pct);
+      return { participationPct: pct, netPercentRecovered: s.netPctRecovered, netRecovered: s.netRecovered, feeAmount: s.feeAmount, rating: s.rating };
+    });
+    renderScenarios(scen, pool.nativeSymbol);
+    // Highlight the selected row
+    document.querySelectorAll('#poolsList .pool-item').forEach((el, i) => {
+      el.classList.toggle('selected', i === idx);
+      el.setAttribute('aria-checked', i === idx ? 'true' : 'false');
+    });
+    // Refresh relaunch/AMM calculators from the current slider
+    onSlider(parseInt(document.getElementById('customSlider').value) || 50);
+  }
+
+  // Render only the platform the user is currently looking at (the others are hidden and get
+  // re-rendered the moment they're selected). Avoids recomputing all 5 calcs on every slider tick.
+  function renderActivePlatform() {
+    if (!poolData) return;
+    switch (currentPlatform) {
+      case 'pumpfun':     renderPumpTable(); renderCustomMcRow(); break;
+      case 'ponsv2':      renderPonsTable(); renderPonsCustomMcRow(); break;
+      case 'meteora':     renderAmmCalc('meteora'); break;
+      case 'raydium':     renderAmmCalc('raydium'); break;
+      case 'uniswap':     renderAmmCalc('uniswap'); break;
+      case 'sol-uniswap': renderSolCrossUni(); break;
+    }
+  }
+
+  function onSlider(val) {
+    document.getElementById('sliderDisplay').textContent = val + '%';
+    if (!poolData) return;
+    const { pool } = poolData;
+    const s = calcScenario(pool.tokensInPool, pool.nativeInPool, pool.totalSupply, +val);
+    document.getElementById('customSol').innerHTML = fmtDenomHtml(s.netRecovered, pool.nativeSymbol);
+    document.getElementById('customMeta').textContent = `${s.netPctRecovered.toFixed(1)}% net recovered`;
+    // Headline takeaway — the single number, at the current participation %.
+    // USD stays constant across the SOL/ETH toggle (always via the native SOL price).
+    const denomUsdVal = denomUsd(s.netRecovered, pool.nativeSymbol);
+    const headUsd = denomUsdVal != null ? denomUsdVal : s.netRecovered * (pool.nativePrice || 0);
+    document.getElementById('headlinePct').textContent = 'at ' + val + '%';
+    document.getElementById('headlineAmt').innerHTML = fmtDenomHtml(s.netRecovered, pool.nativeSymbol);
+    document.getElementById('headlineUsd').textContent = headUsd > 0 ? '≈ ' + fmtUsdAbbr(headUsd) : '';
+    // Keep the matching scenario card highlighted as the slider moves
+    document.querySelectorAll('#scenarioCards .scenario-box').forEach(b => b.classList.toggle('active', parseInt(b.dataset.pct) === +val));
+    renderActivePlatform();
+  }
+
+  function parseMC(str) {
+    if (!str) return NaN;
+    const s = str.trim().toLowerCase().replace(/,/g, '');
+    const m = s.match(/^([\d.]+)\s*([kmb]?)$/);
+    if (!m) return NaN;
+    const n = parseFloat(m[1]);
+    if (isNaN(n)) return NaN;
+    if (m[2] === 'k') return n * 1e3;
+    if (m[2] === 'm') return n * 1e6;
+    if (m[2] === 'b') return n * 1e9;
+    return n;
+  }
+
+  function renderCustomMcRow() {
+    const mcVal = parseMC(document.getElementById('customMcInput').value);
+    if (!mcVal || mcVal <= 0 || !poolData) {
+      ['cmSolNeeded','cmPoolTok','cmLeftover'].forEach(id => document.getElementById(id).textContent = '—');
+      document.getElementById('cmLeftover').className = '';
+      return;
+    }
+    const { pool } = poolData;
+    const sliderPct = parseInt(document.getElementById('customSlider').value) || 50;
+    const s = calcScenario(pool.tokensInPool, pool.nativeInPool, pool.totalSupply, sliderPct);
+    // Use the SAME net-recovered + SOL price as the preset rows so the custom row stays consistent.
+    // getEffectiveNetSol handles cross-chain (EVM→Solana) and stablecoin pools; the old inline
+    // formula didn't, which made the custom Leftover go negative in cross-chain mode.
+    const solPrice = crossChainMode
+      ? parseFloat(document.getElementById('evmCrossSolPrice').value) || 0
+      : parseFloat(document.getElementById('solPriceInput').value) || 0;
+    const netRecoveredSol = getEffectiveNetSol(s);
+    const row = calcPumpRow(mcVal, solPrice, netRecoveredSol);
+    if (!row) return;
+    const hasUsd = solPrice > 0;
+    document.getElementById('cmSolNeeded').innerHTML = fmtDispHtml(row.solNeeded, 'SOL') + (row.graduated ? ' <span class="grad-chip">GRAD</span>' : '');
+    const leftoverEl = document.getElementById('cmLeftover');
+    if (!row.graduated) {   // below 85 SOL graduation — migration can't happen
+      document.getElementById('cmPoolTok').innerHTML = '<span style="color:var(--text-4)">—</span>';
+      leftoverEl.className = ''; leftoverEl.innerHTML = migNA('85 SOL');
+      return;
+    }
+    document.getElementById('cmPoolTok').innerHTML     = pctCell(row.pctSupply);
+    leftoverEl.className = '';
+    leftoverEl.innerHTML = dispLeftoverCell(row.leftover, 'SOL', hasUsd);
+  }
+
+  // Per-platform flag: has the user manually set an LP deposit amount?
+  let lpDepositTouched = {};
+  function onLpDepositInput(platform) { lpDepositTouched[platform] = true; platform === 'solcrossuni' ? renderSolCrossUni() : renderAmmCalc(platform); }
+  function setLpDepositMax(platform) { lpDepositTouched[platform] = false; platform === 'solcrossuni' ? renderSolCrossUni() : renderAmmCalc(platform); }
+
+  // Shared LP-pool renderer: deposit clamp + token side + treasury card + banner.
+  // Used by BOTH the same-chain AMM calcs and the Solana→Uniswap cross-chain calc.
+  // `ids` maps logical fields → element ids (the two calcs use different id prefixes).
+  function renderLpPool(key, recovered, unitSym, unitPrice, decimals, ids) {
+    const set = (id, txt) => { const el = id && document.getElementById(id); if (el) el.textContent = txt; };
+    const setH = (id, html) => { const el = id && document.getElementById(id); if (el) el.innerHTML = html; };
+    const u = tok(unitSym);   // inline ETH/SOL logo (text fallback for BNB etc.)
+
+    // Customizable LP deposit — defaults to full recovered, clamped to [0, recovered].
+    const inp = ids.deposit ? document.getElementById(ids.deposit) : null;
+    let deposit;
+    if (!lpDepositTouched[key]) {
+      deposit = recovered;
+      if (inp) inp.value = recovered > 0 ? recovered.toFixed(decimals) : '';
+    } else {
+      deposit = parseFloat(inp && inp.value);
+      if (isNaN(deposit) || deposit < 0) deposit = 0;
+      if (deposit > recovered) { deposit = recovered; if (inp) inp.value = recovered.toFixed(decimals); }
+    }
+    const leftover = Math.max(0, recovered - deposit);
+
+    setH(ids.depositUnit, u.trim());
+    setH(ids.depositHint, 'of ' + recovered.toFixed(decimals) + u + ' recovered');
+
+    const depUsd  = deposit * unitPrice;
+    const leftUsd = leftover * unitPrice;
+
+    const tokenPrice = (poolData.token && poolData.token.priceUsd) || 0;
+    const tokenSym   = (poolData.token && poolData.token.symbol) || 'tokens';
+    const canTokens  = unitPrice > 0 && tokenPrice > 0;
+    const tokenSideAmt   = canTokens ? (depUsd / tokenPrice) : 0;
+    const leftoverTokens = canTokens ? (leftUsd / tokenPrice) : 0;
+    const treasuryTotalUsd = leftUsd + leftoverTokens * tokenPrice;
+
+    if (ids.nativeLabel) setH(ids.nativeLabel, 'Your ' + u + ' Side');
+    setH(ids.nativeSide, deposit.toFixed(decimals) + u);
+    set(ids.nativeUsd,  unitPrice > 0 ? '≈ ' + fmtUsdAbbr(depUsd) : '—');
+    set(ids.tokenSide,  canTokens ? (fmt(tokenSideAmt) + ' ' + tokenSym) : (unitPrice > 0 ? fmtUsdAbbr(depUsd) : '—'));
+    set(ids.tokenSideSub, canTokens ? ('≈ ' + fmtUsdAbbr(depUsd)) : 'matched to your side');
+    set(ids.poolTotal,  unitPrice > 0 ? fmtUsdAbbr(depUsd * 2) : '—');
+    setH(ids.poolNative, (deposit * 2).toFixed(decimals) + u + ' total');
+    setH(ids.leftover,   leftover.toFixed(decimals) + u);
+    set(ids.leftoverUsd, canTokens
+      ? ('+ ' + fmt(leftoverTokens) + ' ' + tokenSym + ' · ≈ ' + fmtUsdAbbr(treasuryTotalUsd) + ' total')
+      : (unitPrice > 0 ? '≈ ' + fmtUsdAbbr(leftUsd) + ' leftover' : 'leftover'));
+  }
+
+  function ammIds(platform) {
+    return {
+      nativeSide: platform + 'SolSide',   nativeUsd: platform + 'SolUsd',
+      tokenSide:  platform + 'TokenSide', tokenSideSub: platform + 'TokenSideSub',
+      poolTotal:  platform + 'PoolTotal', poolNative: platform + 'PoolSol',
+      leftover:   platform + 'Leftover',  leftoverUsd: platform + 'LeftoverUsd',
+      deposit:    platform + 'Deposit',   depositUnit: platform + 'DepositUnit', depositHint: platform + 'DepositHint',
+      nativeLabel: platform === 'uniswap' ? 'uniswapNativeLabel' : null,
+    };
+  }
+
+  function renderAmmCalc(platform) {
+    if (!poolData) return;
+    const { pool } = poolData;
+    const sliderPct = parseInt(document.getElementById('customSlider').value) || 50;
+    const s = calcScenario(pool.tokensInPool, pool.nativeInPool, pool.totalSupply, sliderPct);
+
+    // Recovered native amount + its USD unit price, resolved per platform / mode.
+    const isUniswap = platform === 'uniswap';
+    let recovered, unitPrice, unitSym, decimals;
+    if (isUniswap) {
+      unitSym   = pool.nativeSymbol || 'ETH';
+      unitPrice = parseFloat(document.getElementById('uniswapNativePrice')?.value) || 0;
+      recovered = s.netRecovered;              // already ETH/BNB
+      decimals  = 4;
+      document.getElementById('uniswapPriceLabel').innerHTML = tok(unitSym).trim();
+    } else {
+      unitSym  = 'SOL';
+      decimals = 2;
+      if (crossChainMode) {
+        recovered = getEffectiveNetSol(s);
+        unitPrice = parseFloat(document.getElementById('evmCrossSolPrice').value) || 0;
+      } else {
+        unitPrice = parseFloat(document.getElementById(platform + 'SolPrice')?.value) || 0;
+        recovered = pool.nativeSymbol === 'SOL' ? s.netRecovered : (unitPrice > 0 ? s.netRecovered / unitPrice : 0);
+      }
+    }
+    renderLpPool(platform, recovered, unitSym, unitPrice, decimals, ammIds(platform));
+  }
+
+  function showState(state) {
+    document.getElementById('stateLoading').classList.toggle('show', state === 'loading');
+    document.getElementById('stateError').classList.toggle('show', state === 'error');
+    const empty = document.getElementById('emptyState');
+    if (empty) empty.style.display = 'none'; // hide first-run state once a lookup begins
+    const res = document.getElementById('results');
+    if (state === 'results') { res.style.display = 'block'; res.classList.add('show'); }
+    else { res.style.display = 'none'; res.classList.remove('show'); }
+  }
+
+  // First-run example chips: set the chain, fill the address, and look it up
+  function useExample(chain, ca) {
+    setChain(chain);
+    document.getElementById('caInput').value = ca;
+    doLookup();
+  }
+
+  // Render the entire results view from the current global `poolData`.
+  // Shared by BOTH Live lookup and Manual mode.
+  function hydrate() {
+    lpDepositTouched = {}; // fresh data → LP deposits default to full recovered
+    const { token, pool } = poolData;
+
+    document.getElementById('rSymbol').textContent = token.symbol;
+    (function () {
+      const el = document.getElementById('rLogo');
+      const prevFb = document.getElementById('rLogoFallback');
+      if (prevFb) prevFb.remove();
+      el.onerror = function () {
+        el.style.display = 'none';
+        if (!document.getElementById('rLogoFallback')) {
+          const span = document.createElement('span');
+          span.className = 'token-logo-fallback';
+          span.id = 'rLogoFallback';
+          span.textContent = (token.symbol || '?').charAt(0).toUpperCase();
+          el.parentNode.insertBefore(span, el);
+        }
+      };
+      if (token.logo) { el.style.display = ''; el.src = token.logo; }
+      else { el.style.display = 'none'; el.onerror(); }
+    })();
+    const rNameEl = document.getElementById('rName');
+    rNameEl.textContent = token.name;
+    rNameEl.title = token.name || '';
+    const fdv = (token.priceUsd || 0) * (pool.totalSupply || 0);
+    document.getElementById('rMc').textContent = fdv > 0 ? fmtUsdAbbr(fdv) + ' FDV' : '';
+    document.getElementById('rLiq').textContent = pool.liquidityUsd ? fmtUsdAbbr(pool.liquidityUsd) + ' liq' : '';
+    document.getElementById('rDex').textContent = pool.dex || 'DEX';
+    const poolWord = (pool.poolCount > 1) ? 'Pools' : 'Pool';
+    document.getElementById('rNativeLabel').textContent = pool.nativeSymbol + ' in ' + poolWord;
+    document.getElementById('rTokensLabel').textContent = 'Tokens in ' + poolWord;
+    document.getElementById('rTokensInPool').textContent = fmt(pool.tokensInPool);
+    document.getElementById('rNativeInPool').textContent = fmtN(pool.nativeInPool, pool.nativeSymbol);
+    document.getElementById('rTotalSupply').textContent = fmt(pool.totalSupply);
+    document.getElementById('rAvailable').textContent = fmt(pool.available);
+    document.getElementById('rAvailablePct').textContent = (pool.availablePct || 0).toFixed(1) + '% of supply';
+
+    // Selectable LP pairs (hidden in manual mode — there's one synthetic pool)
+    const CHAIN_NAMES = { solana: 'Solana', ethereum: 'Ethereum', base: 'Base', bsc: 'BNB Chain', robinhood: 'Robinhood' };
+    const chainName = CHAIN_NAMES[poolData.chain] || '';
+    const pb = document.getElementById('poolsBreakdown');
+    if (pool.pools && pool.pools.length && poolData.chain !== 'manual') {
+      document.getElementById('poolsList').innerHTML = pool.pools.map((p, i) => `
+          <div class="pool-item" role="radio" tabindex="0" aria-checked="${i === 0 ? 'true' : 'false'}" aria-label="${p.dex || 'dex'} pool, ${p.quote || ''}, ${fmtUsdAbbr(p.liquidityUsd)} liquidity" onclick="selectPool(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPool(${i});}">
+            <span class="pool-radio"></span>
+            <span class="pool-dex"><img class="pool-dex-logo" src="https://dd.dexscreener.com/ds-data/dexes/${(p.dex || '').toLowerCase()}.png" alt="" onerror="this.remove()">${p.dex || 'dex'}</span>
+            <span class="pool-quote">${quoteBadge(p.quote)}</span>
+            <span class="pool-liq">${fmtUsdAbbr(p.liquidityUsd)}</span>
+            <span class="pool-paddr">${p.address}</span>
+          </div>`).join('');
+      const many = pool.pools.length > 1;
+      document.getElementById('poolsBreakdownLabel').textContent =
+        (many ? `LP Pairs (${pool.pools.length})` : 'LP Pair') + (chainName ? ` on ${chainName}` : '') + (many ? ' · select one' : '');
+      pb.style.display = 'block';
+    } else {
+      pb.style.display = 'none';
+    }
+
+    // Auto-fill prices FIRST so the initial render uses correct values (single render pass).
+    const sp = pool.solPriceUsd || (pool.nativeSymbol === 'SOL' ? pool.nativePrice : null);
+    if (sp && sp > 0) {
+      const rounded = Math.round(sp);
+      ['solPriceInput','meteoraSolPrice','raydiumSolPrice'].forEach(id => { document.getElementById(id).value = rounded; });
+    }
+    if (pool.nativeSymbol !== 'SOL' && pool.nativePrice > 0) {
+      const np = Math.round(pool.nativePrice);
+      document.getElementById('uniswapNativePrice').value = np;
+      document.getElementById('evmCrossNativePrice').value = np;
+      const sym = pool.nativeSymbol || 'ETH';
+      document.getElementById('uniswapPriceLabel').innerHTML = tok(sym).trim();
+      document.getElementById('uniswapNativeLabel').innerHTML = 'Your ' + tok(sym) + ' Side';
+      document.getElementById('evmCrossNativeSym').textContent = sym;
+      const solEl = document.getElementById('evmCrossSolPrice');
+      solEl._solFetched = false;
+      fetch('api/sol-price').then(r => r.json()).then(d => {
+        if (d.solPriceUsd > 0) {
+          const sp2 = Math.round(d.solPriceUsd);
+          solEl.value = sp2;
+          solEl._solFetched = true;
+          ['solPriceInput','meteoraSolPrice','raydiumSolPrice'].forEach(id => { document.getElementById(id).value = sp2; });
+        }
+      }).catch(() => {});
+    }
+
+    document.getElementById('customSlider').value = 50;
+    document.getElementById('sliderDisplay').textContent = '50%';
+    // Display-currency toggle: available for any native source, defaulted to the source pool's own currency.
+    denomUserSet = false;
+    syncDenomToggle();
+    const nativeSym = poolData.pool.nativeSymbol;
+    setDenom(nativeSym === 'ETH' ? 'ETH' : 'SOL', false);
+    selectPool(0);
+    showState('results');
+  }
+
+  async function doLookup() {
+    const ca = document.getElementById('caInput').value.trim();
+    if (!ca) return;
+    const btn = document.getElementById('calcBtn');
+    btn.disabled = true;
+    showState('loading');
+    // Transient upstream blips (DexScreener / GeckoTerminal timeouts) are retried server-side AND once here, so a
+    // momentary provider hiccup never shows a false "no pools". A real 404 (no pools) or a hard error stops immediately.
+    const url = `api/lookup?ca=${encodeURIComponent(ca)}&chain=${currentChain}`;
+    try {
+      let data = null, res = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          res = await fetch(url);
+          data = await res.json().catch(() => ({}));
+          if (res.ok) break;
+          // Only retry transient failures (503 / {retry:true}); a definitive 404/400 stops now.
+          if (!(res.status === 503 || data.retry)) break;
+        } catch (e) {
+          res = null; data = { error: 'Request failed: ' + e.message };   // network error → eligible for one retry
+        }
+        if (attempt === 0) await new Promise(r => setTimeout(r, 1100));
+      }
+      if (!res || !res.ok) {
+        document.getElementById('errorMsg').textContent = (data && data.error) || 'Lookup failed';
+        showState('error');
+        return;
+      }
+      poolData = data;
+      hydrate();
+    } catch (err) {
+      document.getElementById('errorMsg').textContent = 'Request failed: ' + err.message;
+      showState('error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── Manual mode — user types their own pool numbers to test values ──
+  let mode = 'live';
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+    const live = m === 'live';
+    document.getElementById('tabWrap').style.display = live ? '' : 'none';
+    document.getElementById('searchRow').style.display = live ? '' : 'none';
+    document.getElementById('manualPanel').style.display = live ? 'none' : 'block';
+    document.getElementById('emptyState').style.display = live ? '' : 'none';
+    poolData = null;
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('results').classList.remove('show');
+    document.getElementById('stateError').classList.remove('show');
+    document.getElementById('stateLoading').classList.remove('show');
+  }
+
+  function runManual() {
+    const err = document.getElementById('manualErr');
+    err.textContent = '';
+    const tokens = parseMC(document.getElementById('mTokens').value);
+    const native = parseMC(document.getElementById('mNative').value);
+    const supply = parseMC(document.getElementById('mSupply').value);
+    const sym = document.getElementById('mSymbol').value;
+    const priceIn = parseFloat(document.getElementById('mPrice').value);
+    if (!(tokens > 0)) { err.textContent = 'Enter the tokens currently in the pool.'; return; }
+    if (!(native > 0)) { err.textContent = 'Enter the ' + sym + ' liquidity in the pool.'; return; }
+    if (!(supply > 0)) { err.textContent = 'Enter the total token supply.'; return; }
+    if (supply <= tokens) { err.textContent = 'Total supply must be larger than the tokens in the pool.'; return; }
+    const defPrice = sym === 'SOL' ? 150 : sym === 'BNB' ? 600 : 3000;
+    const nativePrice = priceIn > 0 ? priceIn : defPrice;
+    const ticker = (document.getElementById('mTicker').value.trim() || 'TOKEN').toUpperCase().slice(0, 12);
+    const tokenPriceUsd = (native / tokens) * nativePrice;
+    const liquidityUsd = native * nativePrice * 2;
+    const available = Math.max(0, supply - tokens);
+    poolData = {
+      chain: 'manual',
+      token: { symbol: ticker, name: 'Manual entry', address: '', priceUsd: tokenPriceUsd, logo: null, marketCap: tokenPriceUsd * supply },
+      pool: {
+        address: 'manual', dex: 'Manual', tokensInPool: tokens, nativeInPool: native,
+        nativeSymbol: sym, nativePrice: nativePrice, solPriceUsd: sym === 'SOL' ? nativePrice : null,
+        totalSupply: supply, liquidityUsd, available, availablePct: supply > 0 ? (available / supply) * 100 : 0,
+        poolCount: 1,
+        pools: [{ address: 'manual', dex: 'Manual', quote: sym, liquidityUsd, chainId: 'manual', tokensInPool: tokens, nativeInPool: native, priceUsd: tokenPriceUsd }],
+      },
+    };
+    hydrate();
+  }
+
+  document.getElementById('caInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLookup(); });
+  // Auto-lookup when an address is pasted in (small delay so the value populates first)
+  document.getElementById('caInput').addEventListener('paste', () => setTimeout(doLookup, 60));
+  // Clearing the search bar returns to the home view (example chips)
+  document.getElementById('caInput').addEventListener('input', function () {
+    if (this.value.trim() === '') {
+      poolData = null;
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('results').classList.remove('show');
+      document.getElementById('stateError').classList.remove('show');
+      document.getElementById('stateLoading').classList.remove('show');
+      document.getElementById('emptyState').style.display = '';
+    }
+  });
+</script>
+</body>
+</html>
