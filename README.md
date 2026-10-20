@@ -1,5 +1,26 @@
 # Migration Calculator
 
+A migrate.fun LP recovery and relaunch calculator.
+
+![License](https://img.shields.io/badge/license-MIT-green)
+![Built on](https://img.shields.io/badge/built%20on-Emblem%20Vault-5b8cff)
+![Node.js](https://img.shields.io/badge/Node.js-informational)
+
+## Related repositories
+
+Part of the Emblem ecosystem:
+
+- [Emblem-Tools](https://github.com/jakegallen/Emblem-Tools) - shared Emblem Vault SDK modules
+- [EmblemScan](https://github.com/jakegallen/EmblemScan) - on-chain Emblem Vault analytics
+- [EmblemWrap](https://github.com/jakegallen/EmblemWrap) - cross-chain asset wrapping service
+- [Migration-Calculator](https://github.com/jakegallen/Migration-Calculator) - migrate.fun LP recovery calculator
+- [OneShot](https://github.com/jakegallen/OneShot) - on-chain vault raffle marketplace
+- [Vault-Robbers](https://github.com/jakegallen/Vault-Robbers) - Robinhood Chain heist game ecosystem
+
+---
+
+## Migration Calculator
+
 A migrate.fun LP recovery and launch calculator. Given a token or LP address it pulls live DEX pools and computes recoverable native liquidity (SOL / ETH / BNB), relaunch-cost tables, and a leftover-token breakdown. Supports Solana, Ethereum, Base, BNB, and Robinhood.
 
 ## What it is
